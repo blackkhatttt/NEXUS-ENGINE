@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 jobs:
   desktop:
-    name: C++20 build (\${{ matrix.os }})
+    name: C++20 build
     runs-on: \${{ matrix.os }}
     strategy:
       fail-fast: false
