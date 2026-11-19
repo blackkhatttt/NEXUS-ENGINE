@@ -23,6 +23,8 @@ class MainActivity : Activity() {
     private external fun nativeRunNXS(source: String): String
 
     private var currentProject: DocumentFile? = null
+    private var projectTreeUri: Uri? = null
+    private var projectIsTreeRoot: Boolean = false
     private var currentScript: DocumentFile? = null
     private var scriptEditor: EditText? = null
     private var outputView: TextView? = null
@@ -107,6 +109,8 @@ class MainActivity : Activity() {
         val flags = data.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         try { contentResolver.takePersistableUriPermission(uri, flags) } catch (_: SecurityException) {}
         val selected = DocumentFile.fromTreeUri(this, uri) ?: return
+        projectTreeUri = uri
+        projectIsTreeRoot = pendingAction == ACTION_OPEN
         when (pendingAction) {
             ACTION_CREATE -> createProject(selected, projectNamePending)
             ACTION_OPEN -> openProject(selected)
@@ -196,6 +200,19 @@ class MainActivity : Activity() {
         heading(content, project.name ?: "NEXUS Project")
         body(content, "Project workspace")
         space(content, 18)
+        action(content, "OPEN SCENE EDITOR") {
+            val treeUri = projectTreeUri
+            if (treeUri == null) {
+                toast("Please reopen the project to grant folder access.")
+            } else {
+                startActivity(Intent(this, SceneEditorActivity::class.java).apply {
+                    putExtra(SceneEditorActivity.EXTRA_TREE_URI, treeUri.toString())
+                    putExtra(SceneEditorActivity.EXTRA_PROJECT_NAME, project.name ?: "")
+                    putExtra(SceneEditorActivity.EXTRA_PROJECT_IS_TREE_ROOT, projectIsTreeRoot)
+                })
+            }
+        }
+        space(content, 10)
         action(content, "OPEN main.nxs") {
             val main = project.findFile("Scripts")?.findFile("main.nxs")
             if (main != null) openScript(main) else toast("main.nxs was not found.")
