@@ -48,7 +48,7 @@ class MainActivity : Activity() {
         }, matchWrap())
         addSpace(content, 34)
         content.addView(TextView(this).apply {
-            text = "Build something\\nthat exists only in your imagination."
+            text = "Build something\nthat exists only in your imagination."
             textSize = 25f
             setTextColor(Color.WHITE)
             typeface = Typeface.create("sans-serif", Typeface.BOLD)
@@ -78,9 +78,9 @@ class MainActivity : Activity() {
 
         val nativeStatus = try {
             System.loadLibrary("nexus_android")
-            nativeEngineVersion() + "\\nNative C++ bridge: connected"
+            nativeEngineVersion() + "\nNative C++ bridge: connected"
         } catch (error: UnsatisfiedLinkError) {
-            "NEXUS ENGINE 0.1.0\\nNative C++ bridge: unavailable"
+            "NEXUS ENGINE 0.1.0\nNative C++ bridge: unavailable"
         }
         content.addView(TextView(this).apply {
             text = nativeStatus
