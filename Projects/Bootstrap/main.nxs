@@ -1,0 +1,15 @@
+game "NEXUS FIRST PROJECT" start {
+    # First script executed by NEXUS ENGINE
+    var title Text = "Hello from NXS"
+    var lives Number = 3
+    var speed NumberD = 8.4
+    var active FalseTrue = true
+
+    print(title)
+    print("Lives: " + lives)
+    print("Speed: " + speed)
+    print("Active: " + active)
+
+    lives = 5
+    print("Updated lives: " + lives)
+}
