@@ -5,11 +5,13 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_library(nexus_engine
+set(NEXUS_ENGINE_SOURCES
     Engine/Core/Engine.cpp
     Engine/Core/Logger.cpp
     Engine/Scene/Node2D.cpp
 )
+
+add_library(nexus_engine STATIC ${NEXUS_ENGINE_SOURCES})
 target_include_directories(nexus_engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Engine)
 target_compile_features(nexus_engine PUBLIC cxx_std_20)
 
@@ -19,5 +21,12 @@ else()
     target_compile_options(nexus_engine PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-add_executable(nexus_demo Projects/Bootstrap/main.cpp)
-target_link_libraries(nexus_demo PRIVATE nexus_engine)
+if(ANDROID)
+    # Native shared library for the future Android application wrapper.
+    add_library(nexus_android SHARED Platform/Android/AndroidEntry.cpp)
+    target_link_libraries(nexus_android PRIVATE nexus_engine)
+    target_compile_features(nexus_android PRIVATE cxx_std_20)
+else()
+    add_executable(nexus_demo Projects/Bootstrap/main.cpp)
+    target_link_libraries(nexus_demo PRIVATE nexus_engine)
+endif()
