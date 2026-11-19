@@ -1,11 +1,24 @@
-# NEXUS Hub for Android
+# NEXUS Editor for Android
 
-First Android application shell for NEXUS ENGINE 0.1.
+NEXUS Editor 0.2.0 is the first functional Android project workspace for NEXUS ENGINE.
 
-- Native Android activity named NEXUS Hub.
-- Loads the C++ shared library through JNI.
-- Displays the native engine version and bridge status.
-- Create Project, Open Project, and Documentation are informational placeholders.
+## Features
+- Create a project folder using Android's Storage Access Framework.
+- Generate `project.nproject`, `Assets/`, `Scenes/`, and `Scripts/main.nxs`.
+- Open an existing project folder.
+- Open and edit NXS scripts.
+- Save scripts back to the selected project folder.
+- Execute NXS source through the native C++ runtime and display output/errors in the editor.
+
+## Project structure
+```
+MyProject/
+├── project.nproject
+├── Assets/
+├── Scenes/
+└── Scripts/
+    └── main.nxs
+```
 
 ## Build
 Requires JDK 17, Android SDK, NDK 27.0.12077973, CMake 3.22.1, and Gradle 8.9.
@@ -16,6 +29,6 @@ cd Android
 gradle assembleDebug
 ```
 
-APK: app/build/outputs/apk/debug/app-debug.apk
+APK: `app/build/outputs/apk/debug/app-debug.apk`
 
-This is a Hub shell, not yet a game editor. Project management, rendering, scene editing, and NXS integration are future work.
+The editor currently provides text editing and execution for the supported NXS 0.1 syntax. Scene visualization, node tree, inspector, syntax highlighting, and the graphical 2D viewport are future milestones.
