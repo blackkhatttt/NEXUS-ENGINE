@@ -8,7 +8,7 @@ on:
 jobs:
   desktop:
     name: C++20 build
-    runs-on: \${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
