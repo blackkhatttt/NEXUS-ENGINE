@@ -11,8 +11,11 @@ namespace nexus
             case LogLevel::Warning: std::cout << "[NEXUS][WARNING] "; break;
             case LogLevel::Error: std::cerr << "[NEXUS][ERROR] "; break;
         }
-        if (level == LogLevel::Error) std::cerr << message << '\\n';
-        else std::cout << message << '\\n';
+
+        if (level == LogLevel::Error)
+            std::cerr << message << '\n';
+        else
+            std::cout << message << '\n';
     }
 
     void Logger::info(std::string_view message) { log(LogLevel::Info, message); }
