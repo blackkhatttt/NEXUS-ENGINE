@@ -23,7 +23,11 @@
 ## Runtime
 - [ ] Persistent node identity
 - [ ] Components and lifecycle
-- [ ] Scene data model and readable .nscene format
+- [x] Android scene document model and readable JSON-based .nscene format (v1)
+- [x] Scene Tree: select, add child, rename and delete nodes
+- [x] Inspector: edit node name, position, rotation and scale
+- [x] Save scene documents to Scenes/Main.nscene
+- [ ] Native C++ .nscene loading and serialization
 - [ ] Resource references and validation
 - [ ] Fixed-step update loop
 
