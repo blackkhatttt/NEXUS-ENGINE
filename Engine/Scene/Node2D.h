@@ -16,6 +16,7 @@ namespace nexus
         void addChild(Node2D& child);
         bool removeChild(const Node2D& child);
         [[nodiscard]] const std::string& getName() const noexcept;
+        void setName(std::string name);
         [[nodiscard]] Node2D* getParent() const noexcept;
         [[nodiscard]] const std::vector<Node2D*>& getChildren() const noexcept;
 
