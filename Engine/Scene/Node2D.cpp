@@ -28,6 +28,7 @@ namespace nexus
     }
 
     const std::string& Node2D::getName() const noexcept { return name_; }
+    void Node2D::setName(std::string name) { name_ = std::move(name); }
     Node2D* Node2D::getParent() const noexcept { return parent_; }
     const std::vector<Node2D*>& Node2D::getChildren() const noexcept { return children_; }
 }
