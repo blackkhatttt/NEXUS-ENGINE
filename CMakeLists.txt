@@ -10,8 +10,8 @@ set(NEXUS_ENGINE_SOURCES
  Scripting/NXS/Lexer.cpp
  Scripting/NXS/Runtime.cpp
 )
-add_library(nexus_engine STATIC \${NEXUS_ENGINE_SOURCES})
-target_include_directories(nexus_engine PUBLIC \${CMAKE_CURRENT_SOURCE_DIR}/Engine \${CMAKE_CURRENT_SOURCE_DIR})
+add_library(nexus_engine STATIC ${NEXUS_ENGINE_SOURCES})
+target_include_directories(nexus_engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Engine ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(nexus_engine PUBLIC cxx_std_20)
 if(MSVC)
  target_compile_options(nexus_engine PRIVATE /W4 /permissive-)
@@ -27,5 +27,5 @@ else()
  target_link_libraries(nexus_demo PRIVATE nexus_engine)
  enable_testing()
  add_test(NAME nexus_nxs_bootstrap COMMAND nexus_demo)
- set_tests_properties(nexus_nxs_bootstrap PROPERTIES WORKING_DIRECTORY \${CMAKE_CURRENT_SOURCE_DIR})
+ set_tests_properties(nexus_nxs_bootstrap PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
