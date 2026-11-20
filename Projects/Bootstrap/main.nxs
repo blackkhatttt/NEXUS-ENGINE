@@ -1,11 +1,13 @@
 game "NEXUS FIRST PROJECT" start {
     # First script executed by NEXUS ENGINE
-    var title Text = "Hello from NXS"
+    const title Text = "Hello from NXS"
+    const max_lives Number = 5
     var lives Number = 3
     var speed NumberD = 8.4
     var active FalseTrue = true
 
     print(title)
+    print("Max lives: " + max_lives)
     print("Lives: " + lives)
     print("Speed: " + speed)
     print("Active: " + active)
