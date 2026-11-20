@@ -42,18 +42,22 @@ NEXUS ENGINE now compiles and owns an NXS runtime. The engine API can execute so
 The first integration supports the established NXS prototype:
 - game "PROJECT NAME" start { ... } project header and start block
 - var name Type = value declarations
+- const name Type = value immutable declarations
 - Text, Number, NumberD and FalseTrue
-- Assignment to declared variables
+- Assignment to declared variables (constants are immutable)
 - print(expression)
 - + for text concatenation and numeric addition
 - # comments and newline / semicolon separators
 
 Example script: Projects/Bootstrap/main.nxs.
 
-This is the first interpreter integration, not the complete NXS language. Functions, conditions, loops, objects, engine-node APIs and event callbacks are not implemented yet.
+This is the first interpreter integration, not the complete NXS language. Functions, conditions, loops, objects, engine-node APIs and event callbacks are not implemented yet. NXS `const` declarations are supported and reject reassignment.
 
 ## Current milestone
 The C++ engine core, initial Node2D hierarchy, NXS lexer/interpreter and C++ engine-to-NXS execution API are in place. Desktop CI runs the NXS bootstrap test. Android workflow compiles the same native runtime into the Android library and packages the NEXUS Hub APK.
 
 ## License
 The repository's existing LICENSE file governs this project.
+
+## Editor 0.7.0 — first stage
+The Android Scene Editor adds a `Control` node. A Control node can have UI components attached to it: `Button`, `Joystick`, `Arrows` and `Panel`. Component assignments are stored in the `.nscene` document. This milestone stores the component configuration; it does not yet render interactive controls in a running game.
