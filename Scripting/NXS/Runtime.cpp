@@ -134,6 +134,7 @@ private:
   parseBlock(result, branchTaken);
   bool sawElse = false;
   while (true) {
+   const std::size_t beforeSeparators = current_;
    skipSeparators();
    if (matchIdentifier("eif")) {
     if (sawElse) fail("'eif' cannot appear after 'else'.");
@@ -151,6 +152,7 @@ private:
     branchTaken = true;
     continue;
    }
+   current_ = beforeSeparators;
    break;
   }
  }
