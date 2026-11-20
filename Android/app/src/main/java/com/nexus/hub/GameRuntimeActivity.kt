@@ -1,6 +1,8 @@
 package com.nexus.hub
 
 import android.app.Activity
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -113,12 +115,14 @@ class GameRuntimeActivity : Activity() {
         val y: Float,
         val scaleX: Float,
         val scaleY: Float,
-        val components: List<String>
+        val components: List<String>,
+        val textureUri: String
     )
 
     private class GameRuntimeView(context: android.content.Context, root: JSONObject) : View(context) {
         private val density = resources.displayMetrics.density
         private val elements = mutableListOf<RuntimeElement>()
+        private val textures = mutableMapOf<String, Bitmap>()
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
@@ -151,12 +155,26 @@ class GameRuntimeActivity : Activity() {
             elements.add(RuntimeElement(
                 node.optString("name", "Node"),
                 node.optString("type", "Node2D"),
-                x, y, sx, sy, components
+                x, y, sx, sy, components, node.optString("texture_uri", "")
             ))
             val children = node.optJSONArray("children") ?: JSONArray()
             for (i in 0 until children.length()) {
                 children.optJSONObject(i)?.let { collect(it, x, y, sx, sy) }
             }
+        }
+
+        private fun textureFor(uriText: String): Bitmap? {
+            if (uriText.isBlank()) return null
+            textures[uriText]?.let { return it }
+            val bitmap = try {
+                context.contentResolver.openInputStream(Uri.parse(uriText))?.use {
+                    BitmapFactory.decodeStream(it)
+                }
+            } catch (_: Exception) {
+                null
+            }
+            if (bitmap != null) textures[uriText] = bitmap
+            return bitmap
         }
 
         private fun centerX(element: RuntimeElement) = width / 2f + element.x * density
@@ -197,7 +215,24 @@ class GameRuntimeActivity : Activity() {
             elements.forEach { element ->
                 val cx = centerX(element)
                 val cy = centerY(element)
-                if (element.type != "Control") {
+                if (element.type == "Sprite2D") {
+                    val bitmap = textureFor(element.textureUri)
+                    if (bitmap != null) {
+                        val w = bitmap.width * density * max(0.05f, element.scaleX)
+                        val h = bitmap.height * density * max(0.05f, element.scaleY)
+                        val destination = RectF(cx - w / 2f, cy - h / 2f, cx + w / 2f, cy + h / 2f)
+                        paint.alpha = 255
+                        canvas.drawBitmap(bitmap, null, destination, paint)
+                    } else {
+                        val w = 72f * density * max(0.2f, element.scaleX)
+                        val h = 56f * density * max(0.2f, element.scaleY)
+                        paint.color = 0xFF9A4D58.toInt()
+                        canvas.drawRoundRect(RectF(cx - w / 2f, cy - h / 2f, cx + w / 2f, cy + h / 2f),
+                            6f * density, 6f * density, paint)
+                        textPaint.textSize = 9f * density
+                        canvas.drawText("NO TEXTURE", cx, cy + 3f * density, textPaint)
+                    }
+                } else if (element.type != "Control") {
                     val w = 64f * density * max(0.2f, element.scaleX)
                     val h = 48f * density * max(0.2f, element.scaleY)
                     paint.color = if (element.name.equals("Player", true)) 0xFF63E6BE.toInt() else 0xFF42627F.toInt()
