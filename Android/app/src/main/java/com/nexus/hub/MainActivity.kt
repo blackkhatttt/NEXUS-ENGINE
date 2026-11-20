@@ -422,12 +422,65 @@ class MainActivity : Activity() {
                 }.show()
         }
         gap(content, 10)
+        actionCard(content, "＋", "Create NXS script",
+            "Create a new .nxs file inside Scripts/ and open it.", true) {
+            createScript()
+        }
+        gap(content, 10)
         actionCard(content, "↗", "Open another project",
             "Find projects in another folder.", false) { chooseFolder(ACTION_OPEN) }
         gap(content, 10)
         actionCard(content, "⌂", "Back to NEXUS home",
             "Return to the project launcher.", false) { showHome() }
         setContentView(root)
+    }
+
+    private fun createScript() {
+        val project = currentProject ?: return
+        val scripts = project.findFile("Scripts") ?: project.createDirectory("Scripts")
+        if (scripts == null) {
+            toast("Could not access the Scripts folder.")
+            return
+        }
+        val input = EditText(this).apply {
+            hint = "player_controller"
+            setSingleLine(true)
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Create NXS script")
+            .setMessage("Choose a file name. The .nxs extension is added automatically.")
+            .setView(input)
+            .setNegativeButton("CANCEL", null)
+            .setPositiveButton("CREATE") { _, _ ->
+                var fileName = input.text.toString().trim()
+                    .replace(Regex("[^A-Za-z0-9_-]"), "")
+                if (fileName.isBlank()) {
+                    toast("Enter a valid script name.")
+                    return@setPositiveButton
+                }
+                if (!fileName.endsWith(".nxs", ignoreCase = true)) fileName += ".nxs"
+                if (scripts.findFile(fileName) != null) {
+                    toast("A script with that name already exists.")
+                    return@setPositiveButton
+                }
+                val file = scripts.createFile("text/plain", fileName)
+                if (file == null) {
+                    toast("Could not create the script.")
+                    return@setPositiveButton
+                }
+                val projectTitle = project.name ?: "NEXUS PROJECT"
+                val starter = """game "$projectTitle" start {
+    # New NXS script
+    var message Text = "Hello from NEXUS!"
+    print(message)
+}
+"""
+                if (writeDocument(file, starter)) {
+                    openScript(file)
+                    toast("Script created.")
+                }
+            }
+            .show()
     }
 
     private fun openScript(file: DocumentFile) {
