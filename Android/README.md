@@ -10,6 +10,7 @@ NEXUS Editor 0.6.0 is the Android project workspace for NEXUS ENGINE.
 - New projects use `project.nscene` as the canonical project manifest.
 - Backward compatibility with the earlier `project.nproject` marker.
 - Automatic project detection when selecting a project folder or a parent folder containing projects.
+- SAF-compatible marker detection that does not rely on MIME classification for the custom `.nscene` extension.
 - Recent project shortcut with persisted folder permission.
 - Scene editor with Scene Tree, Inspector and interactive 2D viewport.
 - Edit and run NXS scripts through the native C++ runtime.
