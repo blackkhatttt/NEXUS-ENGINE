@@ -46,3 +46,8 @@ gradle assembleDebug
 ```
 
 APK: `app/build/outputs/apk/debug/app-debug.apk`
+
+
+### Project file extension compatibility
+- Project manifests and scene files are created as `text/plain` through Android's Storage Access Framework so providers preserve the exact `.nscene` and `.nproject` names instead of appending `.json`.
+- Existing projects with `project.nscene.json` or `project.nproject.json` are also detected for compatibility.
