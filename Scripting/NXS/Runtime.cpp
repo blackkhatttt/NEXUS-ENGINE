@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -82,7 +83,8 @@ private:
    result.output.push_back(valueToString(value));
    return;
   }
-  if (checkIdentifier("var")) {
+  if (checkIdentifier("var") || checkIdentifier("const")) {
+   const bool isConstant = checkIdentifier("const");
    advance();
    if (!check(TokenType::Identifier)) fail("Expected a variable name after 'var'.");
    const std::string name = advance().lexeme;
@@ -94,6 +96,7 @@ private:
    if (variables_.contains(name)) fail("Variable '" + name + "' is already declared.");
    variables_.emplace(name, std::move(value));
    types_.emplace(name, type);
+   if (isConstant) constants_.insert(name);
    return;
   }
   if (check(TokenType::Identifier)) {
@@ -102,11 +105,12 @@ private:
    Value value = expression();
    const auto found = variables_.find(name);
    if (found == variables_.end()) fail("Unknown variable '" + name + "'.");
+   if (constants_.contains(name)) fail("Cannot assign to constant '" + name + "'.");
    validateType(types_.at(name), value);
    found->second = std::move(value);
    return;
   }
-  fail("Unknown statement. Supported statements: var and print().");
+  fail("Unknown statement. Supported statements: var, const and print().");
  }
 
  void validateType(const std::string& type, const Value& value) const {
@@ -165,6 +169,7 @@ private:
  std::size_t current_ = 0;
  std::unordered_map<std::string, Value> variables_;
  std::unordered_map<std::string, std::string> types_;
+ std::unordered_set<std::string> constants_;
 };
 }
 
