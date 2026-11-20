@@ -230,14 +230,14 @@ class MainActivity : Activity() {
             .put("main_scene", "Scenes/Main.nscene")
             .put("main_script", "Scripts/main.nxs")
         val manifest = project.findFile("project.nscene")
-            ?: project.createFile("application/json", "project.nscene")
+            ?: project.createFile("text/plain", "project.nscene")
         if (manifest == null || !writeDocument(manifest, manifestJson.toString(2))) {
             toast("Could not create project.nscene.")
             return
         }
         // Keep the previous marker for projects and tools created with Editor 0.2–0.4.
         val legacy = project.findFile("project.nproject")
-            ?: project.createFile("application/json", "project.nproject")
+            ?: project.createFile("text/plain", "project.nproject")
         legacy?.let { writeDocument(it, manifestJson.toString(2)) }
 
         val main = scripts.findFile("main.nxs") ?: scripts.createFile("text/plain", "main.nxs")
@@ -272,7 +272,9 @@ class MainActivity : Activity() {
         return folder.listFiles().firstOrNull { item ->
             val fileName = item.name ?: return@firstOrNull false
             (fileName.equals("project.nscene", ignoreCase = true) ||
-                fileName.equals("project.nproject", ignoreCase = true)) &&
+                fileName.equals("project.nproject", ignoreCase = true) ||
+                fileName.equals("project.nscene.json", ignoreCase = true) ||
+                fileName.equals("project.nproject.json", ignoreCase = true)) &&
                 !item.isDirectory
         }
     }
