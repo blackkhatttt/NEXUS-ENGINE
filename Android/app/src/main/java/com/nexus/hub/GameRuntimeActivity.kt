@@ -303,5 +303,4 @@ class GameRuntimeActivity : Activity() {
         }
     }
 
-    private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
 }
