@@ -1,4 +1,4 @@
-#include "NXS/Runtime.h"
+#include "Scripting/NXS/Runtime.h"
 #include <iostream>
 #include <string>
 
