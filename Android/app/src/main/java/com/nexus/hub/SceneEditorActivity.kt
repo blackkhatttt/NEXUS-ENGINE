@@ -354,7 +354,7 @@ class SceneEditorActivity : Activity() {
         val input = EditText(this).apply { hint = "NewNode"; setSingleLine(true) }
         AlertDialog.Builder(this)
             .setTitle("Add child node")
-            .setMessage("A Node2D will be added under ${parent.name}.")
+            .setMessage("A new scene node will be added under ${parent.name}.")
             .setView(input)
             .setNegativeButton("CANCEL", null)
             .setPositiveButton("ADD") { _, _ ->
