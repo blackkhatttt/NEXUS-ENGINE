@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application android:allowBackup="false" android:label="NEXUS Hub"
+    <application android:allowBackup="false" android:icon="@drawable/nexus_bird" android:roundIcon="@drawable/nexus_bird" android:label="NEXUS Hub"
         android:theme="@style/NexusTheme" android:supportsRtl="true">
         <activity android:name=".SceneEditorActivity" android:exported="false" />
         <activity android:name=".MainActivity"
