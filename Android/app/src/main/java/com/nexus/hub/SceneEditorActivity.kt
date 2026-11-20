@@ -46,6 +46,7 @@ class SceneEditorActivity : Activity() {
     private lateinit var treePanel: LinearLayout
     private lateinit var inspectorPanel: LinearLayout
     private lateinit var statusLabel: TextView
+    private lateinit var viewportView: SceneViewportView
     private var nameField: EditText? = null
     private var xField: EditText? = null
     private var yField: EditText? = null
@@ -164,6 +165,27 @@ class SceneEditorActivity : Activity() {
         toolbar.addView(toolButton("SAVE") { saveScene() }, weighted())
         page.addView(toolbar, matchWrap())
 
+        val viewportCard = panel()
+        viewportCard.addView(sectionTitle("2D VIEWPORT"))
+        viewportView = SceneViewportView(this).apply {
+            onNodeSelected = { id ->
+                selectedId = id
+                refreshPanels()
+            }
+            onNodeMoved = { id, dx, dy ->
+                val node = findNode(sceneRoot, id)
+                if (node != null) {
+                    node.x += dx
+                    node.y += dy
+                    refreshViewport()
+                }
+            }
+        }
+        viewportCard.addView(viewportView, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(250)
+        ))
+        page.addView(viewportCard, matchWrap())
+
         val scroll = ScrollView(this)
         val panels = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -200,6 +222,7 @@ class SceneEditorActivity : Activity() {
         treePanel.removeAllViews()
         addTreeRow(sceneRoot, 0)
         inspectorPanel.removeAllViews()
+        refreshViewport()
         val selected = findNode(sceneRoot, selectedId) ?: sceneRoot
         inspectorPanel.addView(TextView(this).apply {
             text = "TYPE   ${selected.type}"
@@ -214,6 +237,19 @@ class SceneEditorActivity : Activity() {
         scaleXField = field("Scale X", selected.scaleX.toString())
         scaleYField = field("Scale Y", selected.scaleY.toString())
         inspectorPanel.addView(toolButton("APPLY PROPERTIES") { applyInspector() }, matchWrap())
+    }
+
+    private fun refreshViewport() {
+        if (!::viewportView.isInitialized) return
+        val items = mutableListOf<SceneViewportNode>()
+        fun collect(node: SceneNode, parentX: Float, parentY: Float) {
+            val worldX = parentX + node.x
+            val worldY = parentY + node.y
+            items.add(SceneViewportNode(node.id, node.name, worldX, worldY, node.children.isNotEmpty()))
+            node.children.forEach { collect(it, worldX, worldY) }
+        }
+        collect(sceneRoot, 0f, 0f)
+        viewportView.setScene(items, selectedId)
     }
 
     private fun addTreeRow(node: SceneNode, depth: Int) {
