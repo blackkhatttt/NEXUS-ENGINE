@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
@@ -143,19 +144,21 @@ class SceneEditorActivity : Activity() {
     private fun buildEditor() {
         val page = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(14), dp(12), dp(14), dp(12))
-            setBackgroundColor(Color.rgb(9, 13, 22))
+            setPadding(dp(16), dp(14), dp(16), dp(14))
+            setBackgroundColor(Color.rgb(8, 13, 23))
         }
         page.addView(TextView(this).apply {
-            text = project.name ?: "NEXUS PROJECT"
-            textSize = 22f
+            text = "NEXUS  /  SCENE WORKSPACE"
+            textSize = 10f
+            letterSpacing = 0.12f
             typeface = Typeface.DEFAULT_BOLD
             setTextColor(Color.rgb(99, 230, 190))
         }, matchWrap())
         page.addView(TextView(this).apply {
-            text = "SCENE EDITOR  /  Scenes/Main.nscene"
-            textSize = 11f
-            setTextColor(Color.rgb(145, 160, 184))
+            text = "${project.name ?: "PROJECT"}     •     Scenes/Main.nscene"
+            textSize = 18f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.rgb(232, 239, 248))
         }, matchWrap())
 
         val toolbar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
@@ -411,7 +414,7 @@ class SceneEditorActivity : Activity() {
     private fun panel() = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
         setPadding(dp(10), dp(10), dp(10), dp(10))
-        setBackgroundColor(Color.rgb(13, 20, 32))
+        background = GradientDrawable().apply { setColor(Color.rgb(17, 26, 41)); cornerRadius = dp(14).toFloat() }
         val params = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
         )
@@ -421,9 +424,10 @@ class SceneEditorActivity : Activity() {
 
     private fun sectionTitle(value: String) = TextView(this).apply {
         text = value
-        textSize = 13f
+        textSize = 11f
+        letterSpacing = 0.1f
         typeface = Typeface.DEFAULT_BOLD
-        setTextColor(Color.WHITE)
+        setTextColor(Color.rgb(145, 160, 184))
         setPadding(0, 0, 0, dp(8))
     }
 
@@ -431,6 +435,12 @@ class SceneEditorActivity : Activity() {
         text = label
         textSize = 10f
         isAllCaps = false
+        typeface = Typeface.DEFAULT_BOLD
+        setTextColor(if (label == "SAVE" || label == "APPLY PROPERTIES") Color.rgb(8, 13, 23) else Color.rgb(232, 239, 248))
+        background = GradientDrawable().apply {
+            setColor(if (label == "SAVE" || label == "APPLY PROPERTIES") Color.rgb(99, 230, 190) else Color.rgb(31, 44, 63))
+            cornerRadius = dp(9).toFloat()
+        }
         setOnClickListener { callback() }
     }
 
