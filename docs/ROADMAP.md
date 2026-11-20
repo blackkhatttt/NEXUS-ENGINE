@@ -11,6 +11,7 @@
 - [x] Project header and start block
 - [x] Text, Number, NumberD and FalseTrue values
 - [x] Variable declarations and assignment
+- [x] Immutable const declarations and reassignment protection
 - [x] print() and + expressions
 - [x] Engine API to execute NXS source and files
 - [x] Bootstrap script and desktop CI integration test
@@ -25,6 +26,7 @@
 - [ ] Components and lifecycle
 - [x] Android scene document model and readable JSON-based .nscene format (v1)
 - [x] Scene Tree: select, add child, rename and delete nodes
+- [x] Control node with attachable Button, Joystick, Arrows and Panel components
 - [x] Inspector: edit node name, position, rotation and scale
 - [x] Save scene documents to Scenes/Main.nscene
 - [ ] Native C++ .nscene loading and serialization
@@ -51,3 +53,10 @@
 - [ ] Desktop platform layer
 - [ ] Android platform layer
 - [ ] Hybrid base-resolution adaptation
+
+## Editor 0.7.0 — first stage
+- [x] NXS `const` declarations with immutable values
+- [x] Control scene node
+- [x] Attach and remove Button, Joystick, Arrows and Panel control components
+- [ ] Sprite assignment and viewport rendering
+- [ ] NXS script attachment to scene nodes
