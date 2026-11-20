@@ -69,7 +69,7 @@ class SceneEditorActivity : Activity() {
             finish()
             return
         }
-        sceneFile = scenes.findFile("Main.nscene") ?: scenes.createFile("application/json", "Main.nscene")
+        sceneFile = scenes.findFile("Main.nscene") ?: scenes.createFile("text/plain", "Main.nscene")
             ?: run {
                 toast("Could not create Main.nscene.")
                 finish()
