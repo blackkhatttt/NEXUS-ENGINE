@@ -1,9 +1,11 @@
 # NEXUS Editor for Android
 
-NEXUS Editor 0.5.0 is the Android project workspace for NEXUS ENGINE.
+NEXUS Editor 0.6.0 is the Android project workspace for NEXUS ENGINE.
 
 ## Features
 - Redesigned NEXUS Hub with project workspace cards and engine status.
+- Custom blue/cyan bird launcher icon.
+- Create NXS scripts directly from the project workspace; new scripts are saved in `Scripts/` and opened in the editor.
 - Create projects using Android's Storage Access Framework.
 - New projects use `project.nscene` as the canonical project manifest.
 - Backward compatibility with the earlier `project.nproject` marker.
