@@ -47,11 +47,14 @@ The first integration supports the established NXS prototype:
 - Assignment to declared variables (constants are immutable)
 - print(expression)
 - + for text concatenation and numeric addition
+- if / eif / else conditional blocks (parentheses around conditions are optional)
+- ==, !=, >, >=, <, <= comparisons
+- AND, OR and NOT logical operators
 - # comments and newline / semicolon separators
 
 Example script: Projects/Bootstrap/main.nxs.
 
-This is the first interpreter integration, not the complete NXS language. Functions, conditions, loops, objects, engine-node APIs and event callbacks are not implemented yet. NXS `const` declarations are supported and reject reassignment.
+This is an early interpreter integration, not the complete NXS language. Functions, loops, objects, engine-node APIs and event callbacks are not implemented yet. NXS `const` declarations are immutable and reject reassignment.
 
 ## Current milestone
 The C++ engine core, initial Node2D hierarchy, NXS lexer/interpreter and C++ engine-to-NXS execution API are in place. Desktop CI runs the NXS bootstrap test. Android workflow compiles the same native runtime into the Android library and packages the NEXUS Hub APK.
@@ -65,3 +68,9 @@ The Android Scene Editor adds a `Control` node. A Control node can have UI compo
 
 ### NEXUS Editor 0.8.0 — Play Mode
 The Android editor can launch the saved `Scenes/Main.nscene` in a fullscreen immersive runtime. The first runtime renderer displays `Node2D` nodes and `Control` components; Button, Joystick and Arrows respond to touch, while Panel is rendered as an overlay. This is the first Play Mode foundation: NXS gameplay callbacks, sprite rendering, and project/current-scene selection remain in development.
+
+
+### NEXUS Editor 0.9.0 — conditions and sprites
+NXS now supports `if`, `eif` and `else` blocks. Conditions may be written with or without surrounding parentheses. Comparison operators are `==`, `!=`, `>`, `>=`, `<` and `<=`; logical operators are `AND`, `OR` and `NOT`.
+
+The Android scene editor adds `Sprite2D` nodes and an image picker for assigning a texture. The selected image URI is saved in the `.nscene` document, and Play Mode loads and draws the assigned texture. Sprite dimensions use the source image dimensions multiplied by the node scale. This is the first texture path; animation, atlases, filtering controls, and a desktop renderer are still future work.
