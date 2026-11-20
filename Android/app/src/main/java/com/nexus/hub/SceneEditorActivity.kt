@@ -2,6 +2,7 @@ package com.nexus.hub
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -27,6 +28,7 @@ class SceneEditorActivity : Activity() {
         const val EXTRA_PROJECT_NAME = "nexus.project.name"
         const val EXTRA_PROJECT_IS_TREE_ROOT = "nexus.project.is_tree_root"
         val CONTROL_COMPONENTS = listOf("Button", "Joystick", "Arrows", "Panel")
+        private const val REQUEST_PICK_SPRITE = 9102
     }
 
     private data class SceneNode(
@@ -38,6 +40,7 @@ class SceneEditorActivity : Activity() {
         var rotation: Float = 0f,
         var scaleX: Float = 1f,
         var scaleY: Float = 1f,
+        var textureUri: String = "",
         val controlComponents: MutableList<String> = mutableListOf(),
         val children: MutableList<SceneNode> = mutableListOf()
     )
@@ -118,7 +121,8 @@ class SceneEditorActivity : Activity() {
             y = json.optDouble("y", 0.0).toFloat(),
             rotation = json.optDouble("rotation", 0.0).toFloat(),
             scaleX = json.optDouble("scale_x", 1.0).toFloat(),
-            scaleY = json.optDouble("scale_y", 1.0).toFloat()
+            scaleY = json.optDouble("scale_y", 1.0).toFloat(),
+            textureUri = json.optString("texture_uri", "")
         )
         val components = json.optJSONArray("control_components") ?: JSONArray()
         for (index in 0 until components.length()) {
@@ -147,6 +151,7 @@ class SceneEditorActivity : Activity() {
             .put("rotation", node.rotation.toDouble())
             .put("scale_x", node.scaleX.toDouble())
             .put("scale_y", node.scaleY.toDouble())
+            .put("texture_uri", node.textureUri)
             .put("control_components", JSONArray().also { array ->
                 node.controlComponents.forEach { array.put(it) }
             })
@@ -253,6 +258,23 @@ class SceneEditorActivity : Activity() {
         scaleXField = field("Scale X", selected.scaleX.toString())
         scaleYField = field("Scale Y", selected.scaleY.toString())
         inspectorPanel.addView(toolButton("APPLY PROPERTIES") { applyInspector() }, matchWrap())
+        if (selected.type == "Sprite2D") {
+            inspectorPanel.addView(sectionTitle("SPRITE TEXTURE"))
+            inspectorPanel.addView(TextView(this).apply {
+                text = if (selected.textureUri.isBlank()) "No texture assigned"
+                    else "Texture assigned"
+                textSize = 12f
+                setTextColor(Color.rgb(220, 230, 242))
+                setPadding(0, dp(4), 0, dp(8))
+            }, matchWrap())
+            inspectorPanel.addView(toolButton("＋ ASSIGN TEXTURE") { pickSpriteTexture() }, matchWrap())
+            if (selected.textureUri.isNotBlank()) {
+                inspectorPanel.addView(toolButton("REMOVE TEXTURE") {
+                    selected.textureUri = ""
+                    refreshPanels()
+                }, matchWrap())
+            }
+        }
         if (selected.type == "Control") {
             inspectorPanel.addView(sectionTitle("CONTROL COMPONENTS"))
             inspectorPanel.addView(TextView(this).apply {
@@ -363,7 +385,7 @@ class SceneEditorActivity : Activity() {
                 if (name.isBlank()) {
                     toast("Node name cannot be empty.")
                 } else {
-                    val options = arrayOf("Node2D", "Control")
+                    val options = arrayOf("Node2D", "Sprite2D", "Control")
                     AlertDialog.Builder(this)
                         .setTitle("Choose node type")
                         .setItems(options) { _, which ->
@@ -461,6 +483,38 @@ class SceneEditorActivity : Activity() {
         }
         parent.children.forEach { if (removeNode(it, id)) return true }
         return false
+    }
+
+
+    private fun pickSpriteTexture() {
+        val selected = findNode(sceneRoot, selectedId) ?: return
+        if (selected.type != "Sprite2D") {
+            toast("Select a Sprite2D node first.")
+            return
+        }
+        val picker = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "image/*"
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+        }
+        startActivityForResult(picker, REQUEST_PICK_SPRITE)
+    }
+
+    @Deprecated("Deprecated in Android API; retained for compatibility with the minimum SDK")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != REQUEST_PICK_SPRITE || resultCode != RESULT_OK) return
+        val uri = data?.data ?: return
+        try {
+            contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        } catch (_: Exception) {
+            // Some document providers grant a temporary URI permission only.
+        }
+        val selected = findNode(sceneRoot, selectedId) ?: return
+        if (selected.type != "Sprite2D") return
+        selected.textureUri = uri.toString()
+        statusLabel.text = "Texture assigned to ${selected.name}"
+        refreshPanels()
     }
 
     private fun launchGame() {
