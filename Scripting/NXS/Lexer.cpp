@@ -43,7 +43,10 @@ void Lexer::scanToken() {
   case '}': add(TokenType::RightBrace); break;
   case '(': add(TokenType::LeftParen); break;
   case ')': add(TokenType::RightParen); break;
-  case '=': add(TokenType::Equal); break;
+  case '=': add(match('=') ? TokenType::EqualEqual : TokenType::Equal); break;
+  case '!': if (match('=')) add(TokenType::BangEqual); else tokens_.push_back({TokenType::End, "Unexpected character: !", line_, tokenColumn_}); break;
+  case '>': add(match('=') ? TokenType::GreaterEqual : TokenType::Greater); break;
+  case '<': add(match('=') ? TokenType::LessEqual : TokenType::Less); break;
   case '+': add(TokenType::Plus); break;
   case '"': scanString(); break;
   default:
