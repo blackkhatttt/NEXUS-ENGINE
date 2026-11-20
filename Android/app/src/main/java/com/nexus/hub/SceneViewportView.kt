@@ -70,7 +70,7 @@ class SceneViewportView(context: Context) : View(context) {
         if (uriText.isBlank()) return null
         if (textureCache.containsKey(uriText)) return textureCache[uriText]
         val bitmap = try {
-            context.contentResolver.openInputStream(Uri.parse(uriText))?.use { BitmapFactory.decodeStream(it) }
+            getContext().contentResolver.openInputStream(Uri.parse(uriText))?.use { BitmapFactory.decodeStream(it) }
         } catch (_: Exception) { null }
         textureCache[uriText] = bitmap
         return bitmap
@@ -106,6 +106,7 @@ class SceneViewportView(context: Context) : View(context) {
                 val w = bitmap.width * density * zoom * node.scaleX.coerceAtLeast(0.05f)
                 val h = bitmap.height * density * zoom * node.scaleY.coerceAtLeast(0.05f)
                 val destination = RectF(cx - w / 2f, cy - h / 2f, cx + w / 2f, cy + h / 2f)
+                nodePaint.color = android.graphics.Color.WHITE
                 canvas.save()
                 canvas.rotate(node.rotation, cx, cy)
                 canvas.drawBitmap(bitmap, null, destination, nodePaint)
