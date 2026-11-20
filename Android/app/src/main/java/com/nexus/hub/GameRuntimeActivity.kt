@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
@@ -25,6 +26,7 @@ import kotlin.math.min
 import kotlin.math.sqrt
 
 class GameRuntimeActivity : Activity() {
+    private var runtimeView: GameRuntimeView? = null
     companion object {
         const val EXTRA_SCENE_URI = "nexus.runtime.scene_uri"
         const val EXTRA_PROJECT_NAME = "nexus.runtime.project_name"
@@ -67,6 +69,7 @@ class GameRuntimeActivity : Activity() {
 
         splash.setStage(0.85f, "PREPARING RUNTIME")
         val runtime = GameRuntimeView(this, root)
+        runtimeView = runtime
         frame.addView(runtime, 0, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
@@ -164,6 +167,16 @@ class GameRuntimeActivity : Activity() {
 
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
 
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        val handled = runtimeView?.setKeyState(event.keyCode, event.action == KeyEvent.ACTION_DOWN) ?: false
+        return if (handled) true else super.dispatchKeyEvent(event)
+    }
+
+    override fun onDestroy() {
+        runtimeView = null
+        super.onDestroy()
+    }
+
     private class RuntimeElement(
         val name: String,
         val type: String,
@@ -173,7 +186,8 @@ class GameRuntimeActivity : Activity() {
         val scaleX: Float,
         val scaleY: Float,
         val components: List<String>,
-        val textureUri: String
+        val textureUri: String,
+        val movementSpeed: Float
     )
 
     private class GameRuntimeView(context: android.content.Context, root: JSONObject) : View(context) {
@@ -195,27 +209,45 @@ class GameRuntimeActivity : Activity() {
         private val frameHandler = Handler(Looper.getMainLooper())
         private var lastFrameNanos = 0L
         private var player: RuntimeElement? = null
+        private var keyLeft = false
+        private var keyRight = false
+        private var keyUp = false
+        private var keyDown = false
+
+        fun setKeyState(keyCode: Int, pressed: Boolean): Boolean {
+            when (keyCode) {
+                KeyEvent.KEYCODE_A, KeyEvent.KEYCODE_DPAD_LEFT -> keyLeft = pressed
+                KeyEvent.KEYCODE_D, KeyEvent.KEYCODE_DPAD_RIGHT -> keyRight = pressed
+                KeyEvent.KEYCODE_W, KeyEvent.KEYCODE_DPAD_UP -> keyUp = pressed
+                KeyEvent.KEYCODE_S, KeyEvent.KEYCODE_DPAD_DOWN -> keyDown = pressed
+                else -> return false
+            }
+            return true
+        }
         private val frameLoop = object : Runnable {
             override fun run() {
                 val now = System.nanoTime()
                 val dt = if (lastFrameNanos == 0L) 0f else ((now - lastFrameNanos) / 1_000_000_000.0).toFloat().coerceIn(0f, 0.05f)
                 lastFrameNanos = now
-                val movement = when {
-                    activeControl.isBlank() -> 0f to 0f
-                    joystickX != 0f || joystickY != 0f -> joystickX to -joystickY
-                    else -> when (arrowDirection) {
-                        "UP" -> 0f to 1f
-                        "DOWN" -> 0f to -1f
-                        "LEFT" -> -1f to 0f
-                        "RIGHT" -> 1f to 0f
-                        else -> 0f to 0f
-                    }
+                val keyboardX = (if (keyRight) 1f else 0f) - (if (keyLeft) 1f else 0f)
+                val keyboardY = (if (keyUp) 1f else 0f) - (if (keyDown) 1f else 0f)
+                val touchX = if (joystickX != 0f || joystickY != 0f) joystickX else when (arrowDirection) {
+                    "LEFT" -> -1f
+                    "RIGHT" -> 1f
+                    else -> 0f
                 }
-                val magnitude = sqrt(movement.first * movement.first + movement.second * movement.second)
+                val touchY = if (joystickX != 0f || joystickY != 0f) -joystickY else when (arrowDirection) {
+                    "UP" -> 1f
+                    "DOWN" -> -1f
+                    else -> 0f
+                }
+                val movementX = (keyboardX + touchX).coerceIn(-1f, 1f)
+                val movementY = (keyboardY + touchY).coerceIn(-1f, 1f)
+                val magnitude = sqrt(movementX * movementX + movementY * movementY)
                 if (magnitude > 0.001f && player != null) {
                     val divisor = if (magnitude > 1f) magnitude else 1f
-                    player!!.x += movement.first / divisor * 220f * dt
-                    player!!.y += movement.second / divisor * 220f * dt
+                    player!!.x += movementX / divisor * player!!.movementSpeed * dt
+                    player!!.y += movementY / divisor * player!!.movementSpeed * dt
                     invalidate()
                 }
                 postOnAnimation(this)
@@ -227,7 +259,7 @@ class GameRuntimeActivity : Activity() {
             frameHandler.removeCallbacks(frameLoop)
             frameHandler.post(frameLoop)
             if (player == null) {
-                Toast.makeText(context, "Add a Node2D named Player to enable movement controls.", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Add Movement2D to a Node2D or Sprite2D to enable player controls.", Toast.LENGTH_LONG).show()
             }
         }
 
@@ -250,14 +282,15 @@ class GameRuntimeActivity : Activity() {
             val array = node.optJSONArray("control_components") ?: JSONArray()
             for (i in 0 until array.length()) {
                 val value = array.optString(i)
-                if (value in listOf("Button", "Joystick", "Arrows", "Panel")) components.add(value)
+                if (value in listOf("Button", "Joystick", "Arrows", "Panel", "Movement2D")) components.add(value)
             }
             elements.add(RuntimeElement(
                 node.optString("name", "Node"),
                 node.optString("type", "Node2D"),
-                x, y, node.optDouble("rotation", 0.0).toFloat(), sx, sy, components, node.optString("texture_uri", "")
+                x, y, node.optDouble("rotation", 0.0).toFloat(), sx, sy, components, node.optString("texture_uri", ""),
+                node.optDouble("movement_speed", 220.0).toFloat().coerceAtLeast(1f)
             ).also { element ->
-                if (element.name.equals("Player", true) && player == null) player = element
+                if (element.components.contains("Movement2D") && player == null) player = element
             })
             val children = node.optJSONArray("children") ?: JSONArray()
             for (i in 0 until children.length()) {
@@ -347,7 +380,7 @@ class GameRuntimeActivity : Activity() {
                     canvas.drawText(element.name, cx, cy + 4f * density, textPaint)
                 }
 
-                element.components.forEach { component ->
+                element.components.filter { it != "Movement2D" }.forEach { component ->
                     val rect = rectFor(element, component)
                     when (component) {
                         "Button" -> {
