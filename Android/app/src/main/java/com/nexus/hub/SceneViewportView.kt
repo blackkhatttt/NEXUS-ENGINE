@@ -1,6 +1,9 @@
 package com.nexus.hub
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
@@ -15,7 +18,11 @@ data class SceneViewportNode(
     val name: String,
     val x: Float,
     val y: Float,
-    val hasChildren: Boolean
+    val hasChildren: Boolean,
+    val textureUri: String = "",
+    val rotation: Float = 0f,
+    val scaleX: Float = 1f,
+    val scaleY: Float = 1f
 )
 
 /** Touch-enabled 2D scene canvas. Positive world Y points upward. */
@@ -38,6 +45,7 @@ class SceneViewportView(context: Context) : View(context) {
     }
 
     private var nodes: List<SceneViewportNode> = emptyList()
+    private val textureCache = mutableMapOf<String, Bitmap?>()
     private var selectedId = ""
     private var zoom = 1f
     private var panX = 0f
@@ -57,6 +65,16 @@ class SceneViewportView(context: Context) : View(context) {
 
     private fun screenX(x: Float) = width / 2f + panX + x * zoom * density
     private fun screenY(y: Float) = height / 2f + panY - y * zoom * density
+
+    private fun textureFor(uriText: String): Bitmap? {
+        if (uriText.isBlank()) return null
+        if (textureCache.containsKey(uriText)) return textureCache[uriText]
+        val bitmap = try {
+            context.contentResolver.openInputStream(Uri.parse(uriText))?.use { BitmapFactory.decodeStream(it) }
+        } catch (_: Exception) { null }
+        textureCache[uriText] = bitmap
+        return bitmap
+    }
 
     private fun hitNode(x: Float, y: Float) = nodes.asReversed().firstOrNull { node ->
         abs(x - screenX(node.x)) <= 27f * density &&
@@ -83,8 +101,19 @@ class SceneViewportView(context: Context) : View(context) {
             val cy = screenY(node.y)
             val rect = RectF(cx - 22f * density, cy - 15f * density,
                 cx + 22f * density, cy + 15f * density)
-            nodePaint.color = if (node.hasChildren) 0xFF285A58.toInt() else 0xFF29465D.toInt()
-            canvas.drawRoundRect(rect, 5f * density, 5f * density, nodePaint)
+            val bitmap = textureFor(node.textureUri)
+            if (bitmap != null) {
+                val w = bitmap.width * density * zoom * node.scaleX.coerceAtLeast(0.05f)
+                val h = bitmap.height * density * zoom * node.scaleY.coerceAtLeast(0.05f)
+                val destination = RectF(cx - w / 2f, cy - h / 2f, cx + w / 2f, cy + h / 2f)
+                canvas.save()
+                canvas.rotate(node.rotation, cx, cy)
+                canvas.drawBitmap(bitmap, null, destination, nodePaint)
+                canvas.restore()
+            } else {
+                nodePaint.color = if (node.hasChildren) 0xFF285A58.toInt() else 0xFF29465D.toInt()
+                canvas.drawRoundRect(rect, 5f * density, 5f * density, nodePaint)
+            }
             if (node.id == selectedId) {
                 canvas.drawRoundRect(RectF(rect.left - 3f * density, rect.top - 3f * density,
                     rect.right + 3f * density, rect.bottom + 3f * density),
