@@ -167,7 +167,7 @@ class GameRuntimeActivity : Activity() {
             if (uriText.isBlank()) return null
             textures[uriText]?.let { return it }
             val bitmap = try {
-                context.contentResolver.openInputStream(Uri.parse(uriText))?.use {
+                getContext().contentResolver.openInputStream(Uri.parse(uriText))?.use {
                     BitmapFactory.decodeStream(it)
                 }
             } catch (_: Exception) {
