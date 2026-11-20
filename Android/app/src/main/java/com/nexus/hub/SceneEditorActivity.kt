@@ -178,6 +178,7 @@ class SceneEditorActivity : Activity() {
         toolbar.addView(toolButton("RENAME") { renameSelectedDialog() }, weighted())
         toolbar.addView(toolButton("DELETE") { deleteSelected() }, weighted())
         toolbar.addView(toolButton("SAVE") { saveScene() }, weighted())
+        toolbar.addView(toolButton("▶ PLAY") { launchGame() }, weighted())
         page.addView(toolbar, matchWrap())
 
         val viewportCard = panel()
@@ -462,7 +463,17 @@ class SceneEditorActivity : Activity() {
         return false
     }
 
-    private fun saveScene() {
+    private fun launchGame() {
+        if (!saveScene()) return
+        val intent = android.content.Intent(this, GameRuntimeActivity::class.java).apply {
+            putExtra(GameRuntimeActivity.EXTRA_SCENE_URI, sceneFile.uri.toString())
+            putExtra(GameRuntimeActivity.EXTRA_PROJECT_NAME, project.name ?: "NEXUS GAME")
+            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(intent)
+    }
+
+    private fun saveScene(): Boolean {
         val document = JSONObject()
             .put("format", "NEXUS_SCENE")
             .put("version", 1)
@@ -473,8 +484,10 @@ class SceneEditorActivity : Activity() {
             } ?: throw IllegalStateException("Storage provider did not open the scene file.")
             statusLabel.text = "Saved Scenes/Main.nscene"
             toast("Scene saved.")
+            return true
         } catch (error: Exception) {
             toast("Could not save scene: ${error.message}")
+            return false
         }
     }
 
