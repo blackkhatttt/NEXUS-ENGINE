@@ -60,3 +60,14 @@
 - [x] Attach and remove Button, Joystick, Arrows and Panel control components
 - [ ] Sprite assignment and viewport rendering
 - [ ] NXS script attachment to scene nodes
+
+
+## Editor 0.8.0 — Play Mode foundation
+- [x] Launch the saved Main.nscene from the scene editor
+- [x] Fullscreen immersive Android runtime activity
+- [x] Runtime rendering for Node2D and Control nodes
+- [x] Touch interaction for Button, Joystick and Arrows components
+- [x] Panel component rendering
+- [ ] Runtime movement and gameplay APIs exposed to NXS scripts
+- [ ] Run Project and Run Current Scene selection
+- [ ] Sprite rendering and resource loading
