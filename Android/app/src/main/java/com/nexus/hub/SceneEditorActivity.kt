@@ -26,6 +26,7 @@ class SceneEditorActivity : Activity() {
         const val EXTRA_TREE_URI = "nexus.project.tree_uri"
         const val EXTRA_PROJECT_NAME = "nexus.project.name"
         const val EXTRA_PROJECT_IS_TREE_ROOT = "nexus.project.is_tree_root"
+        val CONTROL_COMPONENTS = listOf("Button", "Joystick", "Arrows", "Panel")
     }
 
     private data class SceneNode(
@@ -37,6 +38,7 @@ class SceneEditorActivity : Activity() {
         var rotation: Float = 0f,
         var scaleX: Float = 1f,
         var scaleY: Float = 1f,
+        val controlComponents: MutableList<String> = mutableListOf(),
         val children: MutableList<SceneNode> = mutableListOf()
     )
 
@@ -118,6 +120,13 @@ class SceneEditorActivity : Activity() {
             scaleX = json.optDouble("scale_x", 1.0).toFloat(),
             scaleY = json.optDouble("scale_y", 1.0).toFloat()
         )
+        val components = json.optJSONArray("control_components") ?: JSONArray()
+        for (index in 0 until components.length()) {
+            val component = components.optString(index)
+            if (component in CONTROL_COMPONENTS && !node.controlComponents.contains(component)) {
+                node.controlComponents.add(component)
+            }
+        }
         val children = json.optJSONArray("children") ?: JSONArray()
         for (index in 0 until children.length()) {
             val child = children.optJSONObject(index) ?: continue
@@ -138,6 +147,9 @@ class SceneEditorActivity : Activity() {
             .put("rotation", node.rotation.toDouble())
             .put("scale_x", node.scaleX.toDouble())
             .put("scale_y", node.scaleY.toDouble())
+            .put("control_components", JSONArray().also { array ->
+                node.controlComponents.forEach { array.put(it) }
+            })
             .put("children", children)
     }
 
@@ -240,6 +252,24 @@ class SceneEditorActivity : Activity() {
         scaleXField = field("Scale X", selected.scaleX.toString())
         scaleYField = field("Scale Y", selected.scaleY.toString())
         inspectorPanel.addView(toolButton("APPLY PROPERTIES") { applyInspector() }, matchWrap())
+        if (selected.type == "Control") {
+            inspectorPanel.addView(sectionTitle("CONTROL COMPONENTS"))
+            inspectorPanel.addView(TextView(this).apply {
+                text = if (selected.controlComponents.isEmpty()) "No components attached"
+                    else selected.controlComponents.joinToString("  •  ")
+                textSize = 12f
+                setTextColor(Color.rgb(220, 230, 242))
+                setPadding(0, dp(4), 0, dp(8))
+            }, matchWrap())
+            inspectorPanel.addView(toolButton("＋ ADD COMPONENT") {
+                addControlComponentDialog(selected)
+            }, matchWrap())
+            if (selected.controlComponents.isNotEmpty()) {
+                inspectorPanel.addView(toolButton("REMOVE COMPONENT") {
+                    removeControlComponentDialog(selected)
+                }, matchWrap())
+            }
+        }
     }
 
     private fun refreshViewport() {
@@ -332,13 +362,50 @@ class SceneEditorActivity : Activity() {
                 if (name.isBlank()) {
                     toast("Node name cannot be empty.")
                 } else {
-                    val node = SceneNode(name = name)
-                    parent.children.add(node)
-                    selectedId = node.id
-                    statusLabel.text = "Added ${node.name}"
-                    refreshPanels()
+                    val options = arrayOf("Node2D", "Control")
+                    AlertDialog.Builder(this)
+                        .setTitle("Choose node type")
+                        .setItems(options) { _, which ->
+                            val node = SceneNode(name = name, type = options[which])
+                            parent.children.add(node)
+                            selectedId = node.id
+                            statusLabel.text = "Added ${node.type}: ${node.name}"
+                            refreshPanels()
+                        }
+                        .show()
                 }
             }.show()
+    }
+
+    private fun addControlComponentDialog(node: SceneNode) {
+        val available = CONTROL_COMPONENTS.filterNot { node.controlComponents.contains(it) }
+        if (available.isEmpty()) {
+            toast("All available control components are already attached.")
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Add control component")
+            .setItems(available.toTypedArray()) { _, which ->
+                node.controlComponents.add(available[which])
+                statusLabel.text = "Added ${available[which]} to ${node.name}"
+                refreshPanels()
+            }
+            .setNegativeButton("CANCEL", null)
+            .show()
+    }
+
+    private fun removeControlComponentDialog(node: SceneNode) {
+        if (node.controlComponents.isEmpty()) return
+        val attached = node.controlComponents.toList()
+        AlertDialog.Builder(this)
+            .setTitle("Remove control component")
+            .setItems(attached.toTypedArray()) { _, which ->
+                node.controlComponents.remove(attached[which])
+                statusLabel.text = "Removed ${attached[which]}"
+                refreshPanels()
+            }
+            .setNegativeButton("CANCEL", null)
+            .show()
     }
 
     private fun renameSelectedDialog() {
