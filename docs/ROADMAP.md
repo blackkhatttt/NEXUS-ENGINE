@@ -32,6 +32,9 @@
 - [ ] Fixed-step update loop
 
 ## 2D systems
+- [x] Interactive Android 2D scene viewport with grid and origin
+- [x] Touch selection and direct node dragging in the viewport
+- [x] Pan and pinch-to-zoom navigation
 - [ ] Backend-independent renderer API
 - [ ] First graphics backend
 - [ ] Texture and sprite resources
