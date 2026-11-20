@@ -61,3 +61,7 @@ The repository's existing LICENSE file governs this project.
 
 ## Editor 0.7.0 — first stage
 The Android Scene Editor adds a `Control` node. A Control node can have UI components attached to it: `Button`, `Joystick`, `Arrows` and `Panel`. Component assignments are stored in the `.nscene` document. This milestone stores the component configuration; it does not yet render interactive controls in a running game.
+
+
+### NEXUS Editor 0.8.0 — Play Mode
+The Android editor can launch the saved `Scenes/Main.nscene` in a fullscreen immersive runtime. The first runtime renderer displays `Node2D` nodes and `Control` components; Button, Joystick and Arrows respond to touch, while Panel is rendered as an overlay. This is the first Play Mode foundation: NXS gameplay callbacks, sprite rendering, and project/current-scene selection remain in development.
