@@ -25,6 +25,13 @@ std::string valueToString(const Value& value) {
  if (const auto* decimal = std::get_if<double>(&value)) { std::ostringstream stream; stream << *decimal; return stream.str(); }
  return std::get<bool>(value) ? "true" : "false";
 }
+bool isNumeric(const Value& value) {
+ return std::holds_alternative<std::int64_t>(value) || std::holds_alternative<double>(value);
+}
+double numericValue(const Value& value) {
+ if (const auto* integer = std::get_if<std::int64_t>(&value)) return static_cast<double>(*integer);
+ return std::get<double>(value);
+}
 
 class Parser final {
  struct ParseError { std::string message; std::size_t line; };
@@ -47,7 +54,7 @@ public:
     skipSeparators();
     if (hasBlock && check(TokenType::RightBrace)) break;
     if (isAtEnd()) break;
-    statement(result);
+    statement(result, true);
     if (!check(TokenType::Separator) && !(hasBlock && check(TokenType::RightBrace)) && !isAtEnd())
      fail("Expected a new line or ';' after the statement.");
    }
@@ -70,47 +77,163 @@ private:
  const Token& advance() { if (!isAtEnd()) ++current_; return previous(); }
  bool match(TokenType type) { if (!check(type)) return false; advance(); return true; }
  bool checkIdentifier(const std::string& keyword) const { return check(TokenType::Identifier) && lower(peek().lexeme) == keyword; }
+ bool matchIdentifier(const std::string& keyword) { if (!checkIdentifier(keyword)) return false; advance(); return true; }
  void consumeIdentifier(const std::string& keyword, const std::string& message) { if (!checkIdentifier(keyword)) fail(message); advance(); }
  void consume(TokenType type, const std::string& message) { if (!check(type)) fail(message); advance(); }
  void skipSeparators() { while (match(TokenType::Separator)) {} }
 
- void statement(ExecutionResult& result) {
+ void statement(ExecutionResult& result, bool execute) {
+  if (checkIdentifier("if")) { conditional(result, execute); return; }
+  if (checkIdentifier("eif") || checkIdentifier("else")) fail("'eif' and 'else' must follow an 'if' block.");
   if (checkIdentifier("print")) {
    advance();
    consume(TokenType::LeftParen, "Expected '(' after print.");
    Value value = expression();
    consume(TokenType::RightParen, "Expected ')' after print value.");
-   result.output.push_back(valueToString(value));
+   if (execute) result.output.push_back(valueToString(value));
    return;
   }
   if (checkIdentifier("var") || checkIdentifier("const")) {
    const bool isConstant = checkIdentifier("const");
    advance();
-   if (!check(TokenType::Identifier)) fail("Expected a variable name after 'var'.");
+   if (!check(TokenType::Identifier)) fail("Expected a variable name after declaration.");
    const std::string name = advance().lexeme;
    if (!check(TokenType::Identifier)) fail("Expected a type: Text, Number, NumberD or FalseTrue.");
    const std::string type = lower(advance().lexeme);
    consume(TokenType::Equal, "Expected '=' before the variable value.");
    Value value = expression();
    validateType(type, value);
-   if (variables_.contains(name)) fail("Variable '" + name + "' is already declared.");
-   variables_.emplace(name, std::move(value));
-   types_.emplace(name, type);
-   if (isConstant) constants_.insert(name);
+   if (execute) {
+    if (variables_.contains(name)) fail("Variable '" + name + "' is already declared.");
+    variables_.emplace(name, std::move(value));
+    types_.emplace(name, type);
+    if (isConstant) constants_.insert(name);
+   }
    return;
   }
   if (check(TokenType::Identifier)) {
    const std::string name = advance().lexeme;
    consume(TokenType::Equal, "Expected '=' after variable name.");
    Value value = expression();
-   const auto found = variables_.find(name);
-   if (found == variables_.end()) fail("Unknown variable '" + name + "'.");
-   if (constants_.contains(name)) fail("Cannot assign to constant '" + name + "'.");
-   validateType(types_.at(name), value);
-   found->second = std::move(value);
+   if (execute) {
+    const auto found = variables_.find(name);
+    if (found == variables_.end()) fail("Unknown variable '" + name + "'.");
+    if (constants_.contains(name)) fail("Cannot assign to constant '" + name + "'.");
+    validateType(types_.at(name), value);
+    found->second = std::move(value);
+   }
    return;
   }
-  fail("Unknown statement. Supported statements: var, const and print().");
+  fail("Unknown statement. Supported statements: var, const, print(), if, eif and else.");
+ }
+
+ void conditional(ExecutionResult& result, bool parentExecute) {
+  consumeIdentifier("if", "Expected 'if'.");
+  const bool firstCondition = readCondition();
+  bool branchTaken = parentExecute && firstCondition;
+  parseBlock(result, branchTaken);
+  bool sawElse = false;
+  while (true) {
+   skipSeparators();
+   if (matchIdentifier("eif")) {
+    if (sawElse) fail("'eif' cannot appear after 'else'.");
+    const bool conditionValue = readCondition();
+    const bool runBranch = parentExecute && !branchTaken && conditionValue;
+    parseBlock(result, runBranch);
+    branchTaken = branchTaken || runBranch;
+    continue;
+   }
+   if (matchIdentifier("else")) {
+    if (sawElse) fail("Only one 'else' block is allowed.");
+    sawElse = true;
+    const bool runBranch = parentExecute && !branchTaken;
+    parseBlock(result, runBranch);
+    branchTaken = true;
+    continue;
+   }
+   break;
+  }
+ }
+
+ void parseBlock(ExecutionResult& result, bool execute) {
+  consume(TokenType::LeftBrace, "Expected '{' after condition.");
+  skipSeparators();
+  while (!isAtEnd() && !check(TokenType::RightBrace)) {
+   statement(result, execute);
+   skipSeparators();
+  }
+  consume(TokenType::RightBrace, "Expected '}' to close the conditional block.");
+ }
+
+ bool readCondition() {
+  if (match(TokenType::LeftParen)) {
+   const bool value = conditionOr();
+   consume(TokenType::RightParen, "Expected ')' after condition.");
+   return value;
+  }
+  return conditionOr();
+ }
+
+ bool conditionOr() {
+  bool value = conditionAnd();
+  while (matchIdentifier("or")) {
+   const bool right = conditionAnd();
+   value = value || right;
+  }
+  return value;
+ }
+ bool conditionAnd() {
+  bool value = conditionNot();
+  while (matchIdentifier("and")) {
+   const bool right = conditionNot();
+   value = value && right;
+  }
+  return value;
+ }
+ bool conditionNot() {
+  if (matchIdentifier("not")) return !conditionNot();
+  if (match(TokenType::LeftParen)) {
+   const bool value = conditionOr();
+   consume(TokenType::RightParen, "Expected ')' after grouped condition.");
+   return value;
+  }
+  return comparison();
+ }
+ bool comparison() {
+  Value left = expression();
+  const TokenType op = peek().type;
+  if (op == TokenType::EqualEqual || op == TokenType::BangEqual ||
+      op == TokenType::Greater || op == TokenType::GreaterEqual ||
+      op == TokenType::Less || op == TokenType::LessEqual) {
+   advance();
+   Value right = expression();
+   bool equal = false;
+   bool less = false;
+   bool greater = false;
+   if (isNumeric(left) && isNumeric(right)) {
+    const double a = numericValue(left), b = numericValue(right);
+    equal = a == b; less = a < b; greater = a > b;
+   } else if (left.index() == right.index()) {
+    if (const auto* a = std::get_if<std::string>(&left)) {
+     const auto& b = std::get<std::string>(right);
+     equal = *a == b; less = *a < b; greater = *a > b;
+    } else if (const auto* a = std::get_if<bool>(&left)) {
+     const bool b = std::get<bool>(right);
+     equal = *a == b; less = !*a && b; greater = *a && !b;
+    }
+   } else fail("Comparison requires values of compatible types.");
+   switch (op) {
+    case TokenType::EqualEqual: return equal;
+    case TokenType::BangEqual: return !equal;
+    case TokenType::Greater: return greater;
+    case TokenType::GreaterEqual: return greater || equal;
+    case TokenType::Less: return less;
+    case TokenType::LessEqual: return less || equal;
+    default: break;
+   }
+  }
+  if (const auto* boolean = std::get_if<bool>(&left)) return *boolean;
+  fail("A condition must use a comparison or a FalseTrue value.");
  }
 
  void validateType(const std::string& type, const Value& value) const {
@@ -124,10 +247,6 @@ private:
   if (!valid) fail("Value does not match the declared type '" + type + "'.");
  }
 
- static double numericValue(const Value& value) {
-  if (const auto* integer = std::get_if<std::int64_t>(&value)) return static_cast<double>(*integer);
-  return std::get<double>(value);
- }
  Value expression() {
   Value left = primary();
   while (match(TokenType::Plus)) {
@@ -136,8 +255,7 @@ private:
     left = valueToString(left) + valueToString(right);
    else if (std::holds_alternative<std::int64_t>(left) && std::holds_alternative<std::int64_t>(right))
     left = std::get<std::int64_t>(left) + std::get<std::int64_t>(right);
-   else if ((std::holds_alternative<double>(left) || std::holds_alternative<std::int64_t>(left)) &&
-            (std::holds_alternative<double>(right) || std::holds_alternative<std::int64_t>(right)))
+   else if (isNumeric(left) && isNumeric(right))
     left = numericValue(left) + numericValue(right);
    else fail("The '+' operator requires text or numeric values.");
   }
