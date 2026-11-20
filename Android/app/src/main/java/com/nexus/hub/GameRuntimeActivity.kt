@@ -226,6 +226,9 @@ class GameRuntimeActivity : Activity() {
             lastFrameNanos = 0L
             frameHandler.removeCallbacks(frameLoop)
             frameHandler.post(frameLoop)
+            if (player == null) {
+                Toast.makeText(context, "Add a Node2D named Player to enable movement controls.", Toast.LENGTH_LONG).show()
+            }
         }
 
         override fun onDetachedFromWindow() {
