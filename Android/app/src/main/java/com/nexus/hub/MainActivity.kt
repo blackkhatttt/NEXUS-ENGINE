@@ -453,6 +453,7 @@ class MainActivity : Activity() {
             .setNegativeButton("CANCEL", null)
             .setPositiveButton("CREATE") { _, _ ->
                 var fileName = input.text.toString().trim()
+                    .removeSuffix(".nxs").removeSuffix(".NXS")
                     .replace(Regex("[^A-Za-z0-9_-]"), "")
                 if (fileName.isBlank()) {
                     toast("Enter a valid script name.")
