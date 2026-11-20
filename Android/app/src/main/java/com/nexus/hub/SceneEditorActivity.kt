@@ -3,6 +3,7 @@ package com.nexus.hub
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -13,6 +14,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -260,13 +262,35 @@ class SceneEditorActivity : Activity() {
         inspectorPanel.addView(toolButton("APPLY PROPERTIES") { applyInspector() }, matchWrap())
         if (selected.type == "Sprite2D") {
             inspectorPanel.addView(sectionTitle("SPRITE TEXTURE"))
-            inspectorPanel.addView(TextView(this).apply {
-                text = if (selected.textureUri.isBlank()) "No texture assigned"
-                    else "Texture assigned"
-                textSize = 12f
-                setTextColor(Color.rgb(220, 230, 242))
-                setPadding(0, dp(4), 0, dp(8))
-            }, matchWrap())
+            if (selected.textureUri.isBlank()) {
+                inspectorPanel.addView(TextView(this).apply {
+                    text = "No texture assigned"
+                    textSize = 12f
+                    setTextColor(Color.rgb(220, 230, 242))
+                    setPadding(0, dp(4), 0, dp(8))
+                }, matchWrap())
+            } else {
+                val preview = ImageView(this).apply {
+                    scaleType = ImageView.ScaleType.FIT_CENTER
+                    setBackgroundColor(Color.rgb(8, 13, 23))
+                    val bitmap = try {
+                        contentResolver.openInputStream(Uri.parse(selected.textureUri))?.use {
+                            BitmapFactory.decodeStream(it)
+                        }
+                    } catch (_: Exception) { null }
+                    if (bitmap != null) setImageBitmap(bitmap)
+                    else contentDescription = "Texture preview unavailable"
+                }
+                inspectorPanel.addView(preview, LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, dp(150)
+                ).apply { bottomMargin = dp(8) })
+                inspectorPanel.addView(TextView(this).apply {
+                    text = Uri.parse(selected.textureUri).lastPathSegment ?: "Assigned texture"
+                    textSize = 10f
+                    setTextColor(Color.rgb(145, 160, 184))
+                    setPadding(0, 0, 0, dp(8))
+                }, matchWrap())
+            }
             inspectorPanel.addView(toolButton("＋ ASSIGN TEXTURE") { pickSpriteTexture() }, matchWrap())
             if (selected.textureUri.isNotBlank()) {
                 inspectorPanel.addView(toolButton("REMOVE TEXTURE") {
@@ -301,7 +325,10 @@ class SceneEditorActivity : Activity() {
         fun collect(node: SceneNode, parentX: Float, parentY: Float) {
             val worldX = parentX + node.x
             val worldY = parentY + node.y
-            items.add(SceneViewportNode(node.id, node.name, worldX, worldY, node.children.isNotEmpty()))
+            items.add(SceneViewportNode(
+                node.id, node.name, worldX, worldY, node.children.isNotEmpty(),
+                node.textureUri, node.rotation, node.scaleX, node.scaleY
+            ))
             node.children.forEach { collect(it, worldX, worldY) }
         }
         collect(sceneRoot, 0f, 0f)
