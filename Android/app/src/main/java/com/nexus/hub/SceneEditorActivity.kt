@@ -29,7 +29,7 @@ class SceneEditorActivity : Activity() {
         const val EXTRA_TREE_URI = "nexus.project.tree_uri"
         const val EXTRA_PROJECT_NAME = "nexus.project.name"
         const val EXTRA_PROJECT_IS_TREE_ROOT = "nexus.project.is_tree_root"
-        val CONTROL_COMPONENTS = listOf("Button", "Joystick", "Arrows", "Panel")
+        val CONTROL_COMPONENTS = listOf("Button", "Joystick", "Arrows", "Panel", "Movement2D")
         private const val REQUEST_PICK_SPRITE = 9102
     }
 
@@ -43,6 +43,7 @@ class SceneEditorActivity : Activity() {
         var scaleX: Float = 1f,
         var scaleY: Float = 1f,
         var textureUri: String = "",
+        var movementSpeed: Float = 220f,
         val controlComponents: MutableList<String> = mutableListOf(),
         val children: MutableList<SceneNode> = mutableListOf()
     )
@@ -61,6 +62,7 @@ class SceneEditorActivity : Activity() {
     private var rotationField: EditText? = null
     private var scaleXField: EditText? = null
     private var scaleYField: EditText? = null
+    private var movementSpeedField: EditText? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -124,7 +126,8 @@ class SceneEditorActivity : Activity() {
             rotation = json.optDouble("rotation", 0.0).toFloat(),
             scaleX = json.optDouble("scale_x", 1.0).toFloat(),
             scaleY = json.optDouble("scale_y", 1.0).toFloat(),
-            textureUri = json.optString("texture_uri", "")
+            textureUri = json.optString("texture_uri", ""),
+            movementSpeed = json.optDouble("movement_speed", 220.0).toFloat().coerceAtLeast(1f)
         )
         val components = json.optJSONArray("control_components") ?: JSONArray()
         for (index in 0 until components.length()) {
@@ -154,6 +157,7 @@ class SceneEditorActivity : Activity() {
             .put("scale_x", node.scaleX.toDouble())
             .put("scale_y", node.scaleY.toDouble())
             .put("texture_uri", node.textureUri)
+            .put("movement_speed", node.movementSpeed.toDouble())
             .put("control_components", JSONArray().also { array ->
                 node.controlComponents.forEach { array.put(it) }
             })
@@ -259,6 +263,11 @@ class SceneEditorActivity : Activity() {
         rotationField = field("Rotation", selected.rotation.toString())
         scaleXField = field("Scale X", selected.scaleX.toString())
         scaleYField = field("Scale Y", selected.scaleY.toString())
+        movementSpeedField = null
+        if (selected.controlComponents.contains("Movement2D")) {
+            inspectorPanel.addView(sectionTitle("MOVEMENT2D"))
+            movementSpeedField = field("Movement Speed", selected.movementSpeed.toString())
+        }
         inspectorPanel.addView(toolButton("APPLY PROPERTIES") { applyInspector() }, matchWrap())
         if (selected.type == "Sprite2D") {
             inspectorPanel.addView(sectionTitle("SPRITE TEXTURE"))
@@ -299,8 +308,8 @@ class SceneEditorActivity : Activity() {
                 }, matchWrap())
             }
         }
-        if (selected.type == "Control") {
-            inspectorPanel.addView(sectionTitle("CONTROL COMPONENTS"))
+        if (selected.type == "Control" || selected.type == "Node2D" || selected.type == "Sprite2D") {
+            inspectorPanel.addView(sectionTitle("COMPONENTS"))
             inspectorPanel.addView(TextView(this).apply {
                 text = if (selected.controlComponents.isEmpty()) "No components attached"
                     else selected.controlComponents.joinToString("  •  ")
@@ -385,7 +394,8 @@ class SceneEditorActivity : Activity() {
         val rotation = rotationField?.text?.toString()?.toFloatOrNull()
         val scaleX = scaleXField?.text?.toString()?.toFloatOrNull()
         val scaleY = scaleYField?.text?.toString()?.toFloatOrNull()
-        if (newName.isBlank() || x == null || y == null || rotation == null || scaleX == null || scaleY == null) {
+        val movementSpeed = movementSpeedField?.text?.toString()?.toFloatOrNull() ?: node.movementSpeed
+        if (newName.isBlank() || x == null || y == null || rotation == null || scaleX == null || scaleY == null || movementSpeed <= 0f) {
             toast("Enter a valid name and numeric transform values.")
             return
         }
@@ -395,6 +405,7 @@ class SceneEditorActivity : Activity() {
         node.rotation = rotation
         node.scaleX = scaleX
         node.scaleY = scaleY
+        node.movementSpeed = movementSpeed
         statusLabel.text = "Updated ${node.name}"
         refreshPanels()
     }
@@ -428,7 +439,8 @@ class SceneEditorActivity : Activity() {
     }
 
     private fun addControlComponentDialog(node: SceneNode) {
-        val available = CONTROL_COMPONENTS.filterNot { node.controlComponents.contains(it) }
+        val allowed = if (node.type == "Control") CONTROL_COMPONENTS.filter { it != "Movement2D" } else listOf("Movement2D")
+        val available = allowed.filterNot { node.controlComponents.contains(it) }
         if (available.isEmpty()) {
             toast("All available control components are already attached.")
             return
