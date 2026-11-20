@@ -16,7 +16,9 @@
 - [x] Engine API to execute NXS source and files
 - [x] Bootstrap script and desktop CI integration test
 - [ ] Functions and parameters
-- [ ] Conditions and loops
+- [x] `if`, `eif` and `else` conditional blocks with optional condition parentheses
+- [x] Comparison operators and AND / OR / NOT logic
+- [ ] Loops
 - [ ] Script modules and imports
 - [ ] Runtime-to-node and component bindings
 - [ ] Script lifecycle callbacks
@@ -39,7 +41,9 @@
 - [x] Pan and pinch-to-zoom navigation
 - [ ] Backend-independent renderer API
 - [ ] First graphics backend
-- [ ] Texture and sprite resources
+- [x] Android Sprite2D node and image URI assignment
+- [x] Play Mode texture loading and sprite drawing
+- [ ] Texture atlases, animation and resource import pipeline
 - [ ] Camera2D and coordinate conversion
 - [ ] Basic custom 2D physics
 
@@ -71,3 +75,16 @@
 - [ ] Runtime movement and gameplay APIs exposed to NXS scripts
 - [ ] Run Project and Run Current Scene selection
 - [ ] Sprite rendering and resource loading
+
+
+## Editor 0.9.0 — conditions and sprites
+- [x] NXS if / eif / else conditional execution
+- [x] Optional parentheses around conditions
+- [x] Comparison operators: ==, !=, >, >=, <, <=
+- [x] Logical operators: AND, OR, NOT
+- [x] Sprite2D scene node
+- [x] Android image picker and persistent texture URI in .nscene
+- [x] Play Mode loads and renders assigned sprite textures
+- [ ] Sprite preview in the editor viewport
+- [ ] Sprite animation and texture atlases
+- [ ] NXS script attachment and gameplay callbacks
