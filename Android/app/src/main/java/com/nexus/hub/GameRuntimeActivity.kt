@@ -9,6 +9,8 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -20,6 +22,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sqrt
 
 class GameRuntimeActivity : Activity() {
     companion object {
@@ -34,7 +37,16 @@ class GameRuntimeActivity : Activity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         enterImmersiveMode()
 
+        val frame = FrameLayout(this)
+        frame.setBackgroundColor(Color.rgb(12, 18, 29))
+        val splash = RuntimeSplashView(this, intent.getStringExtra(EXTRA_PROJECT_NAME) ?: "GAME")
+        frame.addView(splash, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+        ))
+        setContentView(frame)
+
         val sceneText = try {
+            splash.setStage(0.2f, "READING SCENE")
             val uri = Uri.parse(intent.getStringExtra(EXTRA_SCENE_URI) ?: "")
             contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
                 ?: throw IllegalStateException("Scene file could not be opened.")
@@ -45,6 +57,7 @@ class GameRuntimeActivity : Activity() {
         }
 
         val root = try {
+            splash.setStage(0.6f, "PARSING SCENE")
             JSONObject(sceneText).getJSONObject("root")
         } catch (_: Exception) {
             Toast.makeText(this, "Invalid NEXUS scene document.", Toast.LENGTH_LONG).show()
@@ -52,9 +65,9 @@ class GameRuntimeActivity : Activity() {
             return
         }
 
-        val frame = FrameLayout(this)
-        frame.setBackgroundColor(Color.rgb(12, 18, 29))
-        frame.addView(GameRuntimeView(this, root), FrameLayout.LayoutParams(
+        splash.setStage(0.85f, "PREPARING RUNTIME")
+        val runtime = GameRuntimeView(this, root)
+        frame.addView(runtime, 0, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
         ))
@@ -86,7 +99,50 @@ class GameRuntimeActivity : Activity() {
             FrameLayout.LayoutParams.WRAP_CONTENT,
             Gravity.TOP or Gravity.START
         ))
-        setContentView(frame)
+        splash.setStage(1f, "READY")
+        splash.postDelayed({
+            frame.removeView(splash)
+            runtime.startRuntime()
+        }, 450L)
+    }
+
+    private class RuntimeSplashView(context: android.content.Context, private val projectName: String) : View(context) {
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        private var progress = 0f
+        private var status = "INITIALIZING"
+        private val density = resources.displayMetrics.density
+
+        fun setStage(value: Float, label: String) {
+            progress = value.coerceIn(0f, 1f)
+            status = label
+            invalidate()
+        }
+
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
+            canvas.drawColor(Color.rgb(7, 11, 20))
+            paint.textAlign = Paint.Align.CENTER
+            paint.typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
+            paint.color = 0xFF63E6BE.toInt()
+            paint.textSize = 27f * density
+            canvas.drawText("NETHERNEXUS", width / 2f, height * 0.43f, paint)
+            paint.color = 0xFF9AAAC0.toInt()
+            paint.textSize = 10f * density
+            canvas.drawText("ENGINE", width / 2f, height * 0.43f + 22f * density, paint)
+            paint.color = Color.WHITE
+            paint.textSize = 13f * density
+            canvas.drawText(projectName.uppercase(), width / 2f, height * 0.57f, paint)
+            val barWidth = width * 0.62f
+            val left = (width - barWidth) / 2f
+            val top = height * 0.64f
+            paint.color = 0xFF263448.toInt()
+            canvas.drawRoundRect(RectF(left, top, left + barWidth, top + 5f * density), 4f, 4f, paint)
+            paint.color = 0xFF63E6BE.toInt()
+            canvas.drawRoundRect(RectF(left, top, left + barWidth * progress, top + 5f * density), 4f, 4f, paint)
+            paint.color = 0xFF91A0B8.toInt()
+            paint.textSize = 9f * density
+            canvas.drawText(status, width / 2f, top + 27f * density, paint)
+        }
     }
 
     @Suppress("DEPRECATION")
@@ -111,8 +167,9 @@ class GameRuntimeActivity : Activity() {
     private class RuntimeElement(
         val name: String,
         val type: String,
-        val x: Float,
-        val y: Float,
+        var x: Float,
+        var y: Float,
+        val rotation: Float,
         val scaleX: Float,
         val scaleY: Float,
         val components: List<String>,
@@ -135,6 +192,46 @@ class GameRuntimeActivity : Activity() {
         private var joystickX = 0f
         private var joystickY = 0f
         private var arrowDirection = ""
+        private val frameHandler = Handler(Looper.getMainLooper())
+        private var lastFrameNanos = 0L
+        private var player: RuntimeElement? = null
+        private val frameLoop = object : Runnable {
+            override fun run() {
+                val now = System.nanoTime()
+                val dt = if (lastFrameNanos == 0L) 0f else ((now - lastFrameNanos) / 1_000_000_000.0).toFloat().coerceIn(0f, 0.05f)
+                lastFrameNanos = now
+                val movement = when {
+                    activeControl.isBlank() -> 0f to 0f
+                    joystickX != 0f || joystickY != 0f -> joystickX to -joystickY
+                    else -> when (arrowDirection) {
+                        "UP" -> 0f to 1f
+                        "DOWN" -> 0f to -1f
+                        "LEFT" -> -1f to 0f
+                        "RIGHT" -> 1f to 0f
+                        else -> 0f to 0f
+                    }
+                }
+                val magnitude = sqrt(movement.first * movement.first + movement.second * movement.second)
+                if (magnitude > 0.001f && player != null) {
+                    val divisor = if (magnitude > 1f) magnitude else 1f
+                    player!!.x += movement.first / divisor * 220f * dt
+                    player!!.y += movement.second / divisor * 220f * dt
+                    invalidate()
+                }
+                postOnAnimation(this)
+            }
+        }
+
+        fun startRuntime() {
+            lastFrameNanos = 0L
+            frameHandler.removeCallbacks(frameLoop)
+            frameHandler.post(frameLoop)
+        }
+
+        override fun onDetachedFromWindow() {
+            frameHandler.removeCallbacks(frameLoop)
+            super.onDetachedFromWindow()
+        }
 
         init {
             collect(root, 0f, 0f, 1f, 1f)
@@ -155,8 +252,10 @@ class GameRuntimeActivity : Activity() {
             elements.add(RuntimeElement(
                 node.optString("name", "Node"),
                 node.optString("type", "Node2D"),
-                x, y, sx, sy, components, node.optString("texture_uri", "")
-            ))
+                x, y, node.optDouble("rotation", 0.0).toFloat(), sx, sy, components, node.optString("texture_uri", "")
+            ).also { element ->
+                if (element.name.equals("Player", true) && player == null) player = element
+            })
             val children = node.optJSONArray("children") ?: JSONArray()
             for (i in 0 until children.length()) {
                 children.optJSONObject(i)?.let { collect(it, x, y, sx, sy) }
@@ -222,7 +321,10 @@ class GameRuntimeActivity : Activity() {
                         val h = bitmap.height * density * max(0.05f, element.scaleY)
                         val destination = RectF(cx - w / 2f, cy - h / 2f, cx + w / 2f, cy + h / 2f)
                         paint.alpha = 255
+                        canvas.save()
+                        canvas.rotate(element.rotation, cx, cy)
                         canvas.drawBitmap(bitmap, null, destination, paint)
+                        canvas.restore()
                     } else {
                         val w = 72f * density * max(0.2f, element.scaleX)
                         val h = 56f * density * max(0.2f, element.scaleY)
