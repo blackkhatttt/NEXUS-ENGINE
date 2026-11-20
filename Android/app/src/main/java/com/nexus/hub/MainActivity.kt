@@ -266,9 +266,19 @@ class MainActivity : Activity() {
         toast("Project created.")
     }
 
+    private fun findProjectMarker(folder: DocumentFile): DocumentFile? {
+        // SAF providers may return a null or generic MIME type for custom extensions.
+        // Match the display name and reject directories instead of relying on isFile.
+        return folder.listFiles().firstOrNull { item ->
+            val fileName = item.name ?: return@firstOrNull false
+            (fileName.equals("project.nscene", ignoreCase = true) ||
+                fileName.equals("project.nproject", ignoreCase = true)) &&
+                !item.isDirectory
+        }
+    }
+
     private fun hasProjectMarker(folder: DocumentFile): Boolean =
-        folder.findFile("project.nscene")?.isFile == true ||
-            folder.findFile("project.nproject")?.isFile == true
+        folder.isDirectory && findProjectMarker(folder) != null
 
     private fun discoverProjects(selected: DocumentFile, treeUri: Uri) {
         val found = mutableListOf<Pair<DocumentFile, Boolean>>()
@@ -388,7 +398,8 @@ class MainActivity : Activity() {
         info.addView(label(project.name ?: "NEXUS Project", 22f, WHITE, true))
         gap(info, 5)
         info.addView(label(
-            if (project.findFile("project.nscene") != null) "project.nscene  •  NEXUS project format"
+            if (findProjectMarker(project)?.name.equals("project.nscene", ignoreCase = true))
+                "project.nscene  •  NEXUS project format"
             else "project.nproject  •  legacy project format",
             11f, MUTED, false
         ))
