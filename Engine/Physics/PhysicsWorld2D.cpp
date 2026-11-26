@@ -37,25 +37,60 @@ namespace nexus::physics
     void PhysicsWorld2D::moveAxis(Body2D& body, float amount, bool horizontal)
     {
         if (amount == 0.0F) return;
-        if (horizontal) body.position_.x += amount;
-        else body.position_.y += amount;
+
+        const float start = horizontal ? body.position_.x : body.position_.y;
+        const float end = start + amount;
+        const float bodyExtent = horizontal ? body.size_.x : body.size_.y;
+        float resolved = end;
+        bool collided = false;
 
         for (Body2D* other : bodies_)
         {
-            if (other == &body || !overlaps(body, *other)) continue;
+            if (other == nullptr || other == &body) continue;
 
-            if (horizontal)
+            const bool overlapsOtherAxis = horizontal
+                ? (body.position_.y < other->position_.y + other->size_.y &&
+                   body.position_.y + body.size_.y > other->position_.y)
+                : (body.position_.x < other->position_.x + other->size_.x &&
+                   body.position_.x + body.size_.x > other->position_.x);
+
+            if (!overlapsOtherAxis) continue;
+
+            const float obstacleStart = horizontal ? other->position_.x : other->position_.y;
+            const float obstacleEnd = obstacleStart +
+                (horizontal ? other->size_.x : other->size_.y);
+
+            if (amount > 0.0F)
             {
-                if (amount > 0.0F) body.position_.x = other->position_.x - body.size_.x;
-                else body.position_.x = other->position_.x + other->size_.x;
-                body.velocity_.x = 0.0F;
+                const float oldEdge = start + bodyExtent;
+                const float newEdge = end + bodyExtent;
+                if (oldEdge <= obstacleStart && newEdge > obstacleStart)
+                {
+                    const float candidate = obstacleStart - bodyExtent;
+                    if (!collided || candidate < resolved) resolved = candidate;
+                    collided = true;
+                }
             }
             else
             {
-                if (amount > 0.0F) body.position_.y = other->position_.y - body.size_.y;
-                else body.position_.y = other->position_.y + other->size_.y;
-                body.velocity_.y = 0.0F;
+                const float oldEdge = start;
+                const float newEdge = end;
+                if (oldEdge >= obstacleEnd && newEdge < obstacleEnd)
+                {
+                    const float candidate = obstacleEnd;
+                    if (!collided || candidate > resolved) resolved = candidate;
+                    collided = true;
+                }
             }
+        }
+
+        if (horizontal) body.position_.x = resolved;
+        else body.position_.y = resolved;
+
+        if (collided)
+        {
+            if (horizontal) body.velocity_.x = 0.0F;
+            else body.velocity_.y = 0.0F;
         }
     }
 
