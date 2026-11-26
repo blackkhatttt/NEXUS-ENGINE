@@ -10,7 +10,7 @@ An original cross-platform game engine targeting desktop and Android.
 - Game scripting: NXS
 - Math scripting: NXSM (independent language)
 - First target: 2D, with architecture prepared for 3D
-- Rendering: backend-independent API; OpenGL ES is the first planned backend
+- Rendering: original backend-independent NXRHI architecture; no mandatory OpenGL dependency
 - Physics: custom basic 2D physics
 - Scenes: readable text-based .nscene format (design in progress)
 
@@ -55,6 +55,10 @@ The first integration supports the established NXS prototype:
 Example script: Projects/Bootstrap/main.nxs.
 
 This is an early interpreter integration, not the complete NXS language. Functions, loops, objects, engine-node APIs and event callbacks are not implemented yet. NXS `const` declarations are immutable and reject reassignment.
+
+## Rendering architecture — NXRHI foundation
+
+The initial NXRHI foundation is under Engine/Rendering/. NetherNexus defines three rendering profiles: Compatibility (desktop, Android and web), Forward (desktop and Android), and Advanced (desktop and Android). The profile policy and abstract RenderDevice contract are backend-independent and do not include a graphics API. No real GPU backend is implemented yet. See Engine/Rendering/README.md for scope and planned backend adapters.
 
 ## Current milestone
 The C++ engine core, initial Node2D hierarchy, NXS lexer/interpreter and C++ engine-to-NXS execution API are in place. Desktop CI runs the NXS bootstrap test. Android workflow compiles the same native runtime into the Android library and packages the NEXUS Hub APK.
