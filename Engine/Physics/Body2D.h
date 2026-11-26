@@ -59,6 +59,7 @@ namespace nexus::physics
         [[nodiscard]] float getGravityScale() const noexcept;
 
     private:
+        friend class PhysicsWorld2D;
         float mass_ = 1.0F;
         float gravityScale_ = 1.0F;
     };
