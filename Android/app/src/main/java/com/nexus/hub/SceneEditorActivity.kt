@@ -167,9 +167,10 @@ class SceneEditorActivity : Activity() {
     private fun buildEditor() {
         val page = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(14), dp(16), dp(14))
+            setPadding(dp(12), dp(10), dp(12), dp(10))
             setBackgroundColor(Color.rgb(8, 13, 23))
         }
+
         page.addView(TextView(this).apply {
             text = "NEXUS  /  SCENE WORKSPACE"
             textSize = 10f
@@ -179,7 +180,7 @@ class SceneEditorActivity : Activity() {
         }, matchWrap())
         page.addView(TextView(this).apply {
             text = "${project.name ?: "PROJECT"}     •     Scenes/Main.nscene"
-            textSize = 18f
+            textSize = 17f
             typeface = Typeface.DEFAULT_BOLD
             setTextColor(Color.rgb(232, 239, 248))
         }, matchWrap())
@@ -192,8 +193,6 @@ class SceneEditorActivity : Activity() {
         toolbar.addView(toolButton("▶ PLAY") { launchGame() }, weighted())
         page.addView(toolbar, matchWrap())
 
-        val viewportCard = panel()
-        viewportCard.addView(sectionTitle("2D VIEWPORT"))
         viewportView = SceneViewportView(this).apply {
             onNodeSelected = { id ->
                 selectedId = id
@@ -208,36 +207,97 @@ class SceneEditorActivity : Activity() {
                 }
             }
         }
-        viewportCard.addView(viewportView, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(250)
-        ))
-        page.addView(viewportCard, matchWrap())
 
-        val scroll = ScrollView(this)
-        val panels = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-        }
-        val treeCard = panel()
-        treeCard.addView(sectionTitle("SCENE TREE"))
         treePanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        treeCard.addView(treePanel, matchWrap())
-        panels.addView(treeCard, matchWrap())
-
-        val inspectorCard = panel()
-        inspectorCard.addView(sectionTitle("INSPECTOR"))
         inspectorPanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        inspectorCard.addView(inspectorPanel, matchWrap())
-        panels.addView(inspectorCard, matchWrap())
-        scroll.addView(panels)
-        page.addView(scroll, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
-        ))
+
+        val wideWorkspace = resources.configuration.orientation ==
+            android.content.res.Configuration.ORIENTATION_LANDSCAPE ||
+            resources.configuration.screenWidthDp >= 720
+
+        if (wideWorkspace) {
+            // Desktop/tablet workspace: Inspector | Viewport | Scene Tree.
+            val workspace = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                baselineAligned = false
+            }
+
+            val inspectorCard = panel()
+            inspectorCard.addView(sectionTitle("INSPECTOR"))
+            val inspectorScroll = ScrollView(this).apply {
+                isFillViewport = true
+                addView(inspectorPanel, matchWrap())
+            }
+            inspectorCard.addView(inspectorScroll, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+            ))
+            workspace.addView(inspectorCard, LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.MATCH_PARENT, 1f
+            ).apply { marginEnd = dp(6) })
+
+            val viewportCard = panel()
+            viewportCard.addView(sectionTitle("2D VIEWPORT"))
+            viewportCard.addView(viewportView, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+            ))
+            workspace.addView(viewportCard, LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.MATCH_PARENT, 2f
+            ).apply {
+                marginStart = dp(3)
+                marginEnd = dp(3)
+            })
+
+            val treeCard = panel()
+            treeCard.addView(sectionTitle("SCENE TREE"))
+            val treeScroll = ScrollView(this).apply {
+                isFillViewport = true
+                addView(treePanel, matchWrap())
+            }
+            treeCard.addView(treeScroll, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+            ))
+            workspace.addView(treeCard, LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.MATCH_PARENT, 1f
+            ).apply { marginStart = dp(6) })
+
+            page.addView(workspace, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+            ))
+        } else {
+            // Portrait/narrow screens keep every panel usable without crushing the viewport.
+            val scroll = ScrollView(this)
+            val panels = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+            }
+
+            val inspectorCard = panel()
+            inspectorCard.addView(sectionTitle("INSPECTOR"))
+            inspectorCard.addView(inspectorPanel, matchWrap())
+            panels.addView(inspectorCard, matchWrap())
+
+            val viewportCard = panel()
+            viewportCard.addView(sectionTitle("2D VIEWPORT"))
+            viewportCard.addView(viewportView, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(280)
+            ))
+            panels.addView(viewportCard, matchWrap())
+
+            val treeCard = panel()
+            treeCard.addView(sectionTitle("SCENE TREE"))
+            treeCard.addView(treePanel, matchWrap())
+            panels.addView(treeCard, matchWrap())
+
+            scroll.addView(panels)
+            page.addView(scroll, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+            ))
+        }
 
         statusLabel = TextView(this).apply {
             text = "Scene ready • Select a node to inspect it"
             textSize = 11f
             setTextColor(Color.rgb(99, 230, 190))
-            setPadding(dp(4), dp(8), dp(4), dp(4))
+            setPadding(dp(4), dp(7), dp(4), dp(3))
         }
         page.addView(statusLabel, matchWrap())
         page.addView(toolButton("BACK TO PROJECT") { finish() }, matchWrap())
