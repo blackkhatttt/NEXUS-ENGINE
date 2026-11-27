@@ -24,6 +24,9 @@ namespace nexus::physics
         [[nodiscard]] Vector2 getPosition() const noexcept;
         [[nodiscard]] Vector2 getSize() const noexcept;
         [[nodiscard]] Vector2 getVelocity() const noexcept;
+        [[nodiscard]] bool isOnFloor() const noexcept;
+        [[nodiscard]] bool isOnCeiling() const noexcept;
+        [[nodiscard]] bool isOnWall() const noexcept;
         void setPosition(Vector2 position) noexcept;
         void setSize(Vector2 size) noexcept;
         void setVelocity(Vector2 velocity) noexcept;
@@ -34,6 +37,9 @@ namespace nexus::physics
         Vector2 position_;
         Vector2 size_;
         Vector2 velocity_{};
+        bool onFloor_ = false;
+        bool onCeiling_ = false;
+        bool onWall_ = false;
     };
 
     class StaticBody2D final : public Body2D
