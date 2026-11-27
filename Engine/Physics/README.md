@@ -8,6 +8,17 @@ The first physics foundation is a small C++20, axis-aligned 2D simulation module
 - `CharacterBody2D`: velocity-driven body for player and character movement.
 - `RigidBody2D`: body affected by world gravity, with configurable gravity scale and mass metadata.
 
+## Collision layers and masks
+
+Each body has a 32-bit collision layer and collision mask. A layer identifies the groups the body belongs to; a mask identifies the groups it can detect. The default layer is bit 0 (`1u`) and the default mask enables all 32 layers.
+
+A pair collides only when both filters agree:
+
+- A's mask includes at least one bit from B's layer.
+- B's mask includes at least one bit from A's layer.
+
+For example, `setCollisionLayer(1u << 1)` places a body on layer 2, while `setCollisionMask(1u << 1)` lets it detect that layer. These values are bitmasks, not one-based layer numbers.
+
 ## Basic usage
 
 ```cpp
