@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Math/Vector2.h"
+#include <cstdint>
 
 namespace nexus::physics
 {
@@ -27,6 +28,10 @@ namespace nexus::physics
         [[nodiscard]] bool isOnFloor() const noexcept;
         [[nodiscard]] bool isOnCeiling() const noexcept;
         [[nodiscard]] bool isOnWall() const noexcept;
+        [[nodiscard]] std::uint32_t getCollisionLayer() const noexcept;
+        [[nodiscard]] std::uint32_t getCollisionMask() const noexcept;
+        void setCollisionLayer(std::uint32_t layer) noexcept;
+        void setCollisionMask(std::uint32_t mask) noexcept;
         void setPosition(Vector2 position) noexcept;
         void setSize(Vector2 size) noexcept;
         void setVelocity(Vector2 velocity) noexcept;
@@ -40,6 +45,8 @@ namespace nexus::physics
         bool onFloor_ = false;
         bool onCeiling_ = false;
         bool onWall_ = false;
+        std::uint32_t collisionLayer_ = 1u;
+        std::uint32_t collisionMask_ = 0xFFFFFFFFu;
     };
 
     class StaticBody2D final : public Body2D
