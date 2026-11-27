@@ -28,6 +28,6 @@ Positions describe the top-left corner of each rectangular body. Sizes are clamp
 
 ## Current scope and limitations
 
-This is an initial foundation, not a complete production physics engine. It currently provides rectangular AABB overlap resolution on separate X/Y movement axes, basic character velocity, and gravity for rigid bodies. It does not yet include rotation-aware shapes, slopes, continuous collision detection, friction, restitution, joints, sleeping, broadphase acceleration, or a full force/impulse solver. The mass property is reserved for later solver work and does not yet change motion.
+This is an initial foundation, not a complete production physics engine. It currently provides rectangular AABB overlap resolution on separate X/Y movement axes, basic character velocity, and gravity for rigid bodies. Bodies also expose per-step floor, ceiling, and wall contact flags (`isOnFloor`, `isOnCeiling`, `isOnWall`), reset at the beginning of each simulation step. It does not yet include rotation-aware shapes, slopes, continuous collision detection, friction, restitution, joints, sleeping, broadphase acceleration, or a full force/impulse solver. The mass property is reserved for later solver work and does not yet change motion.
 
 Run `ctest` after configuring the project to execute the physics regression test alongside the existing engine tests.
