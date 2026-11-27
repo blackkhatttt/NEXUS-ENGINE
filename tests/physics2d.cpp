@@ -32,5 +32,28 @@ int main()
     assert(count == 4);
     assert(world.removeBody(box));
     assert(world.getBodyCount() == 3);
+
+    // Collision layers and masks must agree in both directions.
+    PhysicsWorld2D filterWorld({0.0F, 0.0F});
+    StaticBody2D filteredWall({20.0F, 0.0F}, {10.0F, 20.0F});
+    CharacterBody2D filteredPlayer({0.0F, 0.0F}, {10.0F, 10.0F});
+    filteredWall.setCollisionLayer(2u);
+    filteredPlayer.setCollisionLayer(1u);
+    filteredPlayer.setCollisionMask(1u);
+    filterWorld.addBody(filteredWall);
+    filterWorld.addBody(filteredPlayer);
+
+    filteredPlayer.move({30.0F, 0.0F});
+    filterWorld.step(1.0F);
+    assert(filteredPlayer.getPosition().x == 30.0F);
+    assert(!filteredPlayer.isOnWall());
+
+    filteredPlayer.setPosition({0.0F, 0.0F});
+    filteredPlayer.setCollisionMask(2u);
+    filteredPlayer.move({30.0F, 0.0F});
+    filterWorld.step(1.0F);
+    assert(filteredPlayer.getPosition().x == 10.0F);
+    assert(filteredPlayer.isOnWall());
+
     return 0;
 }
