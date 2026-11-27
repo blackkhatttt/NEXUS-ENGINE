@@ -18,12 +18,15 @@ int main()
     world.step(1.0F);
     assert(player.getPosition().x == 10.0F);
     assert(player.getVelocity().x == 0.0F);
+    assert(player.isOnWall());
+    assert(!player.isOnFloor());
 
     RigidBody2D box({0.0F, 0.0F}, {10.0F, 10.0F});
     world.addBody(box);
     world.step(1.0F);
     assert(box.getPosition().y == 40.0F);
     assert(box.getVelocity().y == 0.0F);
+    assert(box.isOnFloor());
 
     const auto count = world.getBodyCount();
     assert(count == 4);
