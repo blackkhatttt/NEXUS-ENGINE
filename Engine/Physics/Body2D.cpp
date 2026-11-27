@@ -13,6 +13,9 @@ namespace nexus::physics
     Vector2 Body2D::getPosition() const noexcept { return position_; }
     Vector2 Body2D::getSize() const noexcept { return size_; }
     Vector2 Body2D::getVelocity() const noexcept { return velocity_; }
+    bool Body2D::isOnFloor() const noexcept { return onFloor_; }
+    bool Body2D::isOnCeiling() const noexcept { return onCeiling_; }
+    bool Body2D::isOnWall() const noexcept { return onWall_; }
     void Body2D::setPosition(Vector2 position) noexcept { position_ = position; }
     void Body2D::setSize(Vector2 size) noexcept
     {
