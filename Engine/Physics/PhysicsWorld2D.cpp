@@ -47,6 +47,9 @@ namespace nexus::physics
         for (Body2D* other : bodies_)
         {
             if (other == nullptr || other == &body) continue;
+            if ((body.collisionMask_ & other->collisionLayer_) == 0u ||
+                (other->collisionMask_ & body.collisionLayer_) == 0u)
+                continue;
 
             const bool overlapsOtherAxis = horizontal
                 ? (body.position_.y < other->position_.y + other->size_.y &&
