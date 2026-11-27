@@ -16,6 +16,10 @@ namespace nexus::physics
     bool Body2D::isOnFloor() const noexcept { return onFloor_; }
     bool Body2D::isOnCeiling() const noexcept { return onCeiling_; }
     bool Body2D::isOnWall() const noexcept { return onWall_; }
+    std::uint32_t Body2D::getCollisionLayer() const noexcept { return collisionLayer_; }
+    std::uint32_t Body2D::getCollisionMask() const noexcept { return collisionMask_; }
+    void Body2D::setCollisionLayer(std::uint32_t layer) noexcept { collisionLayer_ = layer; }
+    void Body2D::setCollisionMask(std::uint32_t mask) noexcept { collisionMask_ = mask; }
     void Body2D::setPosition(Vector2 position) noexcept { position_ = position; }
     void Body2D::setSize(Vector2 size) noexcept
     {
