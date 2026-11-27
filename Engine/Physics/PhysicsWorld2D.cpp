@@ -89,8 +89,17 @@ namespace nexus::physics
 
         if (collided)
         {
-            if (horizontal) body.velocity_.x = 0.0F;
-            else body.velocity_.y = 0.0F;
+            if (horizontal)
+            {
+                body.velocity_.x = 0.0F;
+                body.onWall_ = true;
+            }
+            else
+            {
+                body.velocity_.y = 0.0F;
+                if (amount > 0.0F) body.onFloor_ = true;
+                else body.onCeiling_ = true;
+            }
         }
     }
 
@@ -101,6 +110,10 @@ namespace nexus::physics
         for (Body2D* body : bodies_)
         {
             if (body == nullptr || body->type_ == BodyType2D::Static) continue;
+
+            body->onFloor_ = false;
+            body->onCeiling_ = false;
+            body->onWall_ = false;
 
             if (body->type_ == BodyType2D::Rigid)
             {
